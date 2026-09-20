@@ -69,3 +69,4 @@ export function toldLine(a: Appointment, actingFacility: string): string {
   const orderer = a.origin === 'Personal' ? null : a.fromFacility;
   return orderer && orderer !== actingFacility ? `${orderer} and the patient are told.` : 'The patient is told.';
 }
+
