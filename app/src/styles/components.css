@@ -1,0 +1,250 @@
+/* Shared VITAL components. Values follow the Claude Design prototypes exactly; all colour,
+   radius and type come from tokens. Transitions are 120ms colour-only — nothing moves. */
+
+.icon { display: block; flex: 0 0 auto; }
+.tabular { font-variant-numeric: tabular-nums; }
+.muted { color: var(--color-charcoal-muted); }
+
+/* ---------- Portal surface ---------- */
+.portal {
+  min-height: 100vh;
+  background: var(--color-cream-paper);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-sm);
+  line-height: 1.5;
+  color: var(--color-charcoal);
+  -webkit-font-smoothing: antialiased;
+}
+.portal__main { padding: 24px 24px 64px; }
+
+.page-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+.page-title {
+  margin: 0;
+  font-size: var(--text-heading-sm);
+  font-weight: 600;
+  letter-spacing: var(--tracking-heading);
+  color: var(--color-forest-ink);
+}
+.page-head__end { margin-left: auto; color: var(--color-charcoal-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.page-sub { margin: 0 0 16px; color: var(--color-charcoal-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.footnote { margin: 12px 0 0; font-size: 12px; color: var(--color-charcoal-muted); }
+
+/* ---------- Session bar ---------- */
+.session {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 40px; padding: 8px 24px;
+  border-bottom: 1px solid var(--color-border-strong);
+  position: sticky; top: 0; z-index: 5;
+  background: var(--color-keylime-wash);
+}
+.session__brand { font-weight: 600; letter-spacing: 0.14em; font-size: 13px; color: var(--color-forest-ink); }
+.session__user-icon { color: var(--color-forest-ink); display: flex; }
+.session__who { display: flex; align-items: baseline; gap: 8px; }
+.session__name { font-weight: 600; }
+.session__line, .session__terminal { color: var(--color-charcoal-muted); font-size: 13px; }
+.session__end { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+
+/* ---------- Prototype strip (not product UI) ---------- */
+.protobar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 24px;
+  background: var(--color-cream-paper);
+  border-bottom: 1px solid var(--color-border-strong);
+}
+.protobar__label { font-size: 12px; color: var(--color-charcoal-muted); }
+.protobar__label--spaced { margin-left: 16px; }
+.pills { display: flex; gap: 4px; flex-wrap: wrap; }
+.pill {
+  height: 28px; padding: 0 10px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-border-input);
+  background: transparent; color: var(--color-forest-ink);
+  font-family: var(--font-sans); font-size: 12px; font-weight: 400;
+  cursor: pointer; transition: background-color 120ms ease;
+}
+.pill:hover { background: var(--color-keylime-wash); }
+.pill[aria-pressed="true"] {
+  background: var(--color-forest-ink); border-color: var(--color-forest-ink);
+  color: var(--color-cream-paper); font-weight: 600;
+}
+
+/* ---------- Badges and chips ---------- */
+.badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 3px 10px;
+  border-radius: var(--radius-badge);
+  font-size: 12px; font-weight: 500; white-space: nowrap;
+}
+.badge--waiting   { background: var(--status-waiting-fill);   color: var(--status-waiting-ink); }
+.badge--progress  { background: var(--status-progress-fill);  color: var(--status-progress-ink); }
+.badge--done      { background: var(--status-done-fill);      color: var(--status-done-ink); }
+.badge--fail      { background: var(--status-fail-fill);      color: var(--status-fail-ink); }
+.badge--attention { background: var(--status-attention-fill); color: var(--status-attention-ink); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 8px;
+  border-radius: var(--radius-badge);
+  border: 1px solid var(--color-border-input);
+  font-size: 12px; white-space: nowrap; color: var(--color-charcoal);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: var(--radius-control);
+  border: 1px solid transparent;
+  font-family: var(--font-sans); font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  transition: background-color 120ms ease;
+}
+.btn--sm { height: 32px; padding: 0 12px; font-size: 13px; }
+.btn--md { height: 40px; padding: 0 16px; font-size: 14px; }
+.btn--lg { height: 48px; padding: 0 16px; font-size: 15px; }
+.btn--block { width: 100%; }
+
+.btn--primary { background: var(--color-forest-ink); border-color: var(--color-forest-ink); color: var(--color-cream-paper); }
+.btn--primary:hover { background: var(--color-forest-shadow); }
+.btn--outline { background: transparent; border-color: var(--color-border-input); color: var(--color-forest-ink); }
+.btn--outline:hover, .btn--ghost:hover { background: var(--color-keylime-wash); }
+.btn--ghost { background: transparent; color: var(--color-forest-ink); }
+.btn--danger-outline { background: transparent; border-color: var(--color-clay-alert); color: var(--color-clay-alert); }
+.btn--danger-outline:hover { background: var(--color-clay-wash); }
+.btn--danger { background: var(--color-clay-alert); border-color: var(--color-clay-alert); color: var(--color-cream-paper); }
+
+/* Disabled is a Border Mist fill with Disabled Ink text — no border, no hover. */
+.btn:disabled, .btn:disabled:hover {
+  background: var(--color-border-mist); border-color: var(--color-border-mist);
+  color: var(--color-disabled-ink); cursor: not-allowed;
+}
+
+.back {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 32px; margin-bottom: 12px; padding: 0 10px 0 6px;
+  border-radius: var(--radius-control); border: 1px solid transparent;
+  background: transparent; color: var(--color-forest-ink);
+  font-family: var(--font-sans); font-size: 13px;
+  cursor: pointer; transition: background-color 120ms ease;
+}
+.back:hover { background: var(--color-keylime-wash); }
+
+/* ---------- Tabs ---------- */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--color-border-strong); margin-bottom: 12px; }
+.tabs__tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 14px;
+  border: 0; border-bottom: 2px solid transparent;
+  background: transparent; color: var(--color-charcoal);
+  font-family: var(--font-sans); font-size: 14px; font-weight: 400;
+  cursor: pointer; transition: background-color 120ms ease;
+}
+.tabs__tab:hover { background: var(--color-keylime-wash); }
+.tabs__tab[aria-selected="true"] { border-bottom-color: var(--color-forest-ink); color: var(--color-forest-ink); font-weight: 600; }
+.tabs__count { color: var(--color-charcoal-muted); font-weight: 400; }
+
+/* ---------- Cards, callouts, facts ---------- */
+.card { border: 1px solid var(--color-border-strong); border-radius: var(--radius-card); padding: 16px; }
+.card__title { margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--color-forest-ink); }
+
+.callout {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 16px; margin-bottom: 16px;
+  border-radius: var(--radius-card);
+}
+.callout__icon { padding-top: 2px; }
+.callout__body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.callout--tight .callout__body { gap: 4px; }
+.callout__title { font-weight: 600; }
+.callout__body p { margin: 0; font-size: 13px; }
+.callout--amber { border-left: 3px solid var(--color-amber-hold); background: var(--color-amber-wash); }
+.callout--amber .callout__icon, .callout--amber .callout__title { color: var(--color-amber-hold); }
+.callout--clay { border-left: 3px solid var(--color-clay-alert); background: var(--color-clay-wash); }
+.callout--clay .callout__icon, .callout--clay .callout__title { color: var(--color-clay-alert); }
+.callout--keylime { border: 1px solid var(--color-border-strong); background: var(--color-keylime-wash); }
+.callout--keylime .callout__icon, .callout--keylime .callout__title { color: var(--color-forest-ink); }
+
+/* A cream panel set inside a tinted callout. */
+.inset { padding: 12px; background: var(--color-cream-paper); border-radius: var(--radius-control); }
+
+.facts {
+  margin: 0;
+  display: grid; grid-template-columns: 150px minmax(0, 1fr);
+  row-gap: 8px; column-gap: 12px; font-size: 13px;
+}
+.facts__row { display: contents; }
+.facts dt { color: var(--color-charcoal-muted); }
+.facts dd { margin: 0; }
+.facts--inset { row-gap: 4px; padding: 12px; background: var(--color-cream-paper); border-radius: var(--radius-control); }
+
+/* A tinted row holding a document or a patient read-back. */
+.tile {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px; background: var(--color-keylime-wash); border-radius: var(--radius-control);
+}
+.tile__icon { color: var(--color-forest-ink); }
+.tile__text { display: flex; flex-direction: column; min-width: 0; }
+.tile__name { font-weight: 500; }
+.tile__meta { font-size: 12px; color: var(--color-charcoal-muted); font-variant-numeric: tabular-nums; }
+.tile__end { margin-left: auto; }
+
+/* ---------- Dialog ---------- */
+.scrim {
+  position: fixed; inset: 0; z-index: 20;
+  background: var(--scrim);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.dialog {
+  max-width: 480px; width: 100%;
+  background: var(--color-cream-paper);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-floating);
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.dialog__title { margin: 0; font-size: 18px; font-weight: 600; color: var(--color-forest-ink); }
+.dialog__body { margin: 0; font-size: 14px; }
+.dialog__actions { display: flex; gap: 8px; justify-content: flex-end; padding-top: 4px; }
+
+/* ---------- Prototype index ---------- */
+.index { padding: 48px 24px; max-width: 640px; }
+.index__list { margin: 16px 0; padding-left: 20px; display: flex; flex-direction: column; gap: 12px; }
+.index__step { display: block; font-size: 13px; color: var(--color-charcoal-muted); }
+
+/* ---------- Demo clock (prototype chrome) ---------- */
+.democlock { margin-left: auto; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.democlock__time { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-charcoal-muted); margin-right: 4px; }
+.democlock__reset { display: inline-flex; align-items: center; gap: 4px; }
+.stage .democlock { margin-left: 0; justify-content: center; }
+
+/* ---------- Notification bell (a dropdown: one of the three shadowed surfaces) ---------- */
+.bellbox { position: relative; }
+.bellbox__count {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px;
+  padding: 0 5px; border-radius: var(--radius-badge);
+  background: var(--color-forest-ink); color: var(--color-cream-paper); font-size: 11px; font-weight: 600;
+}
+.bellbox__panel {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 10;
+  width: 380px; max-height: 70vh; overflow: auto;
+  background: var(--color-cream-paper); border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-card); box-shadow: var(--shadow-floating);
+  padding: 12px; display: flex; flex-direction: column; gap: 8px;
+}
+.bellbox__title { font-weight: 600; color: var(--color-forest-ink); }
+.bellbox__list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.bellbox__item {
+  display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left;
+  padding: 8px; border: 0; border-bottom: 1px solid var(--color-border-strong); border-radius: 0;
+  background: transparent; font-family: var(--font-sans); font-size: 13px; color: var(--color-charcoal);
+  cursor: pointer; transition: background-color 120ms ease;
+}
+.bellbox__item:hover { background: var(--color-keylime-wash); }
+.bellbox__kind { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 12px; }
+.tone--forest .bellbox__kind { color: var(--color-forest-ink); }
+.tone--amber .bellbox__kind { color: var(--color-amber-hold); }
+.tone--clay .bellbox__kind { color: var(--color-clay-alert); }
+.bellbox__new {
+  padding: 0 6px; border-radius: var(--radius-badge);
+  background: var(--color-forest-ink); color: var(--color-cream-paper); font-size: 11px;
+}
+.bellbox__at { font-size: 12px; color: var(--color-charcoal-muted); }

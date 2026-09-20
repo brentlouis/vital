@@ -1,0 +1,10 @@
+/* VITAL webfonts.
+   Faire Octave (display serif) and Suisse Intl (UI sans) are commercially
+   licensed and are NOT shipped here. Per DESIGN.md §2.1 the substitutes are
+   authoritative for all prototyping and pilot work:
+     Faire Octave -> Cormorant Garamond 300
+     Suisse Intl  -> Inter 400/500/600
+   Both are served from Google Fonts. If licensed binaries become available,
+   drop them in assets/fonts/ and replace the @import below with @font-face
+   rules pointing at them; keep the family names in tokens/typography.css. */
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@400;500;600&display=swap");

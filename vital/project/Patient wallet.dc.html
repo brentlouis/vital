@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<![CDATA[<helmet>
+  <style>
+/* VITAL webfonts.
+   Faire Octave (display serif) and Suisse Intl (UI sans) are commercially
+   licensed and are NOT shipped here. Per DESIGN.md §2.1 the substitutes are
+   authoritative for all prototyping and pilot work:
+     Faire Octave -> Cormorant Garamond 300
+     Suisse Intl  -> Inter 400/500/600
+   Both are served from Google Fonts. If licensed binaries become available,
+   drop them in assets/fonts/ and replace the @import below with @font-face
+   rules pointing at them; keep the family names in tokens/typography.css. */
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@400;500;600&display=swap");
+
+/* VITAL color — DESIGN.md §1. Light theme only; dark mode is out of scope. */
+:root {
+  /* Foundation */
+  --color-forest-ink: #0f3e17;
+  --color-forest-shadow: #0c2f10;
+  --color-sage-mist: #b1dbb8;
+  --color-keylime-wash: #e1f4df;
+  --color-mint-veil: #cfe7d3;
+  --color-slate-hush: #b6ced5;
+  --color-cream-paper: #fffefc;
+  --color-charcoal: #222222;
+
+  /* Neutrals */
+  --color-charcoal-muted: #6b6b6b;
+  --color-border-strong: #c2bfb6;
+  --color-border-input: #8f8c84;
+  --color-disabled-ink: #8f8c84;
+  --color-border-mist: #efeeeb; /* decorative hairlines only — 1.15:1 */
+
+  /* Semantic status — locked meanings, never decorative */
+  --color-clay-alert: #8c2f2a;
+  --color-clay-wash: #f5e3e1;
+  --color-amber-hold: #8a5a12;
+  --color-amber-wash: #f7edd9;
+
+  --color-focus: #0f3e17;
+  --scrim: rgba(15, 62, 23, 0.32);
+
+  /* Semantic aliases */
+  --text-primary: var(--color-charcoal);
+  --text-heading: var(--color-forest-ink);
+  --text-muted: var(--color-charcoal-muted);
+  --text-inverse: var(--color-cream-paper);
+  --text-disabled: var(--color-disabled-ink);
+  --text-link: var(--color-forest-ink);
+
+  --surface-page: var(--color-cream-paper);
+  --surface-card: var(--color-cream-paper);
+  --surface-tint-1: var(--color-keylime-wash);
+  --surface-tint-2: var(--color-mint-veil);
+  --surface-tint-3: var(--color-sage-mist);
+  --surface-counter: var(--color-slate-hush);
+  --surface-inverse: var(--color-forest-ink);
+
+  --border-divider: var(--color-border-strong);
+  --border-control: var(--color-border-input);
+  --border-hairline: var(--color-border-mist);
+
+  --action-primary: var(--color-forest-ink);
+  --action-primary-hover: var(--color-forest-shadow);
+  --action-destructive: var(--color-clay-alert);
+
+  /* Status groups — DESIGN.md §6.1 */
+  --status-waiting-fill: var(--color-border-mist);
+  --status-waiting-ink: var(--color-charcoal-muted);
+  --status-progress-fill: var(--color-slate-hush);
+  --status-progress-ink: var(--color-forest-ink);
+  --status-done-fill: var(--color-forest-ink);
+  --status-done-ink: var(--color-cream-paper);
+  --status-fail-fill: var(--color-clay-wash);
+  --status-fail-ink: var(--color-clay-alert);
+  --status-attention-fill: var(--color-amber-wash);
+  --status-attention-ink: var(--color-amber-hold);
+}
+
+/* VITAL typography — DESIGN.md §2. Serif is wallet + deck only, never portals. */
+:root {
+  --font-serif-display: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-serif-display);
+
+  --text-caption: 12px;      --leading-caption: 1.5;
+  --text-body-sm: 14px;      --leading-body-sm: 1.5;
+  --text-body: 16px;         --leading-body: 1.5;
+  --text-subheading: 18px;   --leading-subheading: 1.4;
+  --text-heading-sm: 20px;   --leading-heading-sm: 1.35;
+  --text-heading-md: 24px;   --leading-heading-md: 1.3;
+  --text-heading-lg: 32px;   --leading-heading-lg: 1.2;
+  --text-display: 48px;      --leading-display: 1.1;
+
+  --tracking-heading: -0.01em;
+  --tracking-heading-lg: -0.02em;
+  --tracking-display: -0.03em;
+  --tracking-column-header: 0.06em;
+
+  --font-weight-light: 300;   /* serif only */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Semantic aliases */
+  --type-portal-body: var(--text-body-sm);  /* 14px is the portal default */
+  --type-wallet-body: var(--text-body);     /* 16px is the wallet default */
+}
+
+/* Every timestamp, referral ID, patient ID and count — DESIGN.md §2.4 */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* The single permitted uppercase — table column headers, DESIGN.md §2.5 */
+.column-header {
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-column-header);
+  text-transform: uppercase;
+  color: var(--color-charcoal-muted);
+}
+
+/* VITAL spacing, shape, density and targets — DESIGN.md §3. */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-badge: 999px;
+  --radius-icon: 4px;
+
+  /* Comfortable — wallet, deck */
+  --card-padding-comfortable: 24px;
+  --row-height-comfortable: 56px;
+  --gap-comfortable: 16px;
+  --section-gap-comfortable: 48px;
+
+  /* Compact — RHU and laboratory portals */
+  --card-padding-compact: 16px;
+  --row-height-compact: 40px;
+  --gap-compact: 12px;
+  --section-gap-compact: 24px;
+
+  /* Targets */
+  --target-touch: 48px;    /* wallet, mobile */
+  --target-control: 40px;  /* portal controls */
+  --target-icon: 32px;     /* portal icon-only buttons */
+
+  /* Layout */
+  --gutter-portal: 24px;
+  --gutter-wallet: 16px;
+  --max-width-marketing: 1200px;
+}
+
+/* Density scopes — set on a surface root, components read the resolved vars. */
+[data-density="comfortable"] {
+  --card-padding: var(--card-padding-comfortable);
+  --row-height: var(--row-height-comfortable);
+  --gap: var(--gap-comfortable);
+  --section-gap: var(--section-gap-comfortable);
+}
+[data-density="compact"] {
+  --card-padding: var(--card-padding-compact);
+  --row-height: var(--row-height-compact);
+  --gap: var(--gap-compact);
+  --section-gap: var(--section-gap-compact);
+}
+
+/* VITAL elevation — DESIGN.md §4. Default is shadowless; depth is tinted
+   surface layering (cream -> keylime -> mint -> sage -> slate).
+   Shadows exist for exactly three surfaces: dialog, bottom sheet / dropdown,
+   toast. Nothing else in the system casts one. */
+:root {
+  --shadow-none: none;
+  --shadow-floating: 0 4px 16px rgba(12, 47, 16, 0.12);
+  --scrim-modal: rgba(15, 62, 23, 0.32);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+/* Minimal, opinion-free base so consumers inherit the brand defaults. */
+body {
+  margin: 0;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, h5, h6 { color: var(--text-heading); font-weight: var(--font-weight-semibold); margin: 0; }
+a { color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--action-primary-hover); }
+:focus-visible { outline: var(--focus-ring-width) solid var(--color-focus); outline-offset: var(--focus-ring-offset); }
+  </style>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.js"></script>
+  <script>
+/* VITAL seed data — synthetic. Invented people, real Bohol geography.
+   v0.2: the tracked object is an Appointment (origin + scheduled slot). */
+(function () {
+  const RHU = 'Loon Rural Health Unit';
+  const RHU_STAFF = 'J. Bacarro';
+  const LAB_STAFF = {
+    'Tagbilaran Diagnostic Center': 'R. Piezas',
+    'Dauis Bayview Laboratory': 'C. Olaivar',
+    'Panglao Island Medical Lab': 'M. Sumampong',
+    'Loon Heritage Clinical Lab': 'E. Bughao',
+    'Baclayon Parish Diagnostics': 'N. Talisic',
+    'Loboc Riverside Laboratory': 'V. Auxtero',
+  };
+
+  const LABS = Object.keys(LAB_STAFF);
+
+  /* Whether a test typically needs a provider decision. The binding rule is per facility
+     (referralTests below), declared by the facility at registration. */
+  const TEST_META = [
+    { name: 'CBC', long: 'Complete blood count', needsReferral: false },
+    { name: 'Fasting blood sugar', long: 'Fasting blood sugar', needsReferral: false },
+    { name: 'Urinalysis', long: 'Urinalysis', needsReferral: false },
+    { name: 'Chest X-ray', long: 'Chest X-ray', needsReferral: true },
+    { name: 'Rabies vaccination', long: 'Rabies vaccination', needsReferral: false },
+    { name: 'Lipid profile', long: 'Lipid profile', needsReferral: false },
+    { name: 'Sputum smear', long: 'Sputum smear', needsReferral: true },
+    { name: 'Pregnancy test', long: 'Pregnancy test', needsReferral: false },
+  ];
+  const TESTS = TEST_META.map(t => t.name);
+
+  /* Capability flags decide behaviour. Type is a display and licensing label only, and no
+     longer selects a portal: a clinic may refer out, receive, or both. */
+  const CAPABILITIES = {
+    'Loon Rural Health Unit':       { type: 'RHU / health centre',   canRefer: true,  canReceive: false },
+    'Tagbilaran Diagnostic Center': { type: 'Clinic',                canRefer: true,  canReceive: true  },
+    'Dauis Bayview Laboratory':     { type: 'Standalone laboratory', canRefer: false, canReceive: true  },
+    'Baclayon Parish Diagnostics':  { type: 'Clinic',                canRefer: false, canReceive: true  },
+    'Panglao Island Medical Lab':   { type: 'Standalone laboratory', canRefer: false, canReceive: true  },
+    'Loon Heritage Clinical Lab':   { type: 'Standalone laboratory', canRefer: false, canReceive: true  },
+    'Loboc Riverside Laboratory':   { type: 'Standalone laboratory', canRefer: false, canReceive: true  },
+  };
+  function capabilitiesOf(name) {
+    return CAPABILITIES[name] || { type: 'Standalone laboratory', canRefer: false, canReceive: true };
+  }
+
+  /* Test coverage per facility, plus disclosed subscription tier (brief §3). */
+  const FACILITIES = [
+    { name: 'Tagbilaran Diagnostic Center', municipality: 'Tagbilaran', travel: '35 min by van', partner: true,
+      coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Chest X-ray', 'Lipid profile', 'Sputum smear', 'Pregnancy test'],
+      referralTests: ['Chest X-ray', 'Sputum smear'] },
+    { name: 'Dauis Bayview Laboratory', municipality: 'Dauis', travel: '40 min by van', partner: false,
+      coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Chest X-ray', 'Lipid profile'],
+      referralTests: ['Chest X-ray'] },
+    { name: 'Baclayon Parish Diagnostics', municipality: 'Baclayon', travel: '50 min by van', partner: false,
+      coverage: ['CBC', 'Urinalysis', 'Chest X-ray', 'Sputum smear'],
+      referralTests: ['Sputum smear'] },
+    { name: 'Panglao Island Medical Lab', municipality: 'Panglao', travel: '1 hr 5 min by van', partner: true,
+      coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Rabies vaccination', 'Pregnancy test'],
+      referralTests: [] },
+    { name: 'Loon Heritage Clinical Lab', municipality: 'Loon', travel: '10 min on foot', partner: false,
+      coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Pregnancy test'],
+      referralTests: [] },
+    { name: 'Loboc Riverside Laboratory', municipality: 'Loboc', travel: '1 hr 20 min by van', partner: true,
+      coverage: ['Fasting blood sugar', 'Urinalysis', 'Rabies vaccination'],
+      referralTests: [] },
+  ];
+
+  /* Each receiving facility publishes its own day schedule. This is the single source of slot
+     data: L6 renders it, and P7 and R2 may only offer slots drawn from it. Still static —
+     no capacity engine, no conflict resolution (brief §1.3). */
+  const SCHEDULE = {
+    'Tagbilaran Diagnostic Center': [
+      { day: 'Wed 16 Sep', times: ['07:30', '08:00', '09:30', '13:00', '14:30'] },
+      { day: 'Thu 17 Sep', times: ['07:30', '10:00', '11:00', '15:00'] },
+      { day: 'Fri 18 Sep', times: ['08:30', '09:00', '13:30'] },
+    ],
+    'Dauis Bayview Laboratory': [
+      { day: 'Wed 16 Sep', times: ['08:00', '09:00', '10:30'] },
+      { day: 'Thu 17 Sep', times: ['08:00', '13:30', '14:00'] },
+      { day: 'Fri 18 Sep', times: ['09:30', '11:00'] },
+    ],
+    'Baclayon Parish Diagnostics': [
+      { day: 'Thu 17 Sep', times: ['09:00', '10:00'] },
+      { day: 'Fri 18 Sep', times: ['08:00', '08:30', '13:00'] },
+    ],
+    'Panglao Island Medical Lab': [
+      { day: 'Wed 16 Sep', times: ['08:30', '11:30'] },
+      { day: 'Thu 17 Sep', times: ['07:00', '09:30', '14:00', '15:30'] },
+      { day: 'Fri 18 Sep', times: ['10:00', '13:00'] },
+    ],
+    'Loon Heritage Clinical Lab': [
+      { day: 'Wed 16 Sep', times: ['07:00', '07:30', '08:00', '10:00'] },
+      { day: 'Thu 17 Sep', times: ['07:00', '08:30', '13:00'] },
+      { day: 'Fri 18 Sep', times: ['07:30', '09:00', '14:00'] },
+    ],
+    'Loboc Riverside Laboratory': [
+      { day: 'Thu 17 Sep', times: ['09:00', '13:30'] },
+      { day: 'Fri 18 Sep', times: ['08:00', '10:30', '15:00'] },
+    ],
+  };
+  function slotsFor(facility) { return SCHEDULE[facility] || []; }
+  /* Slot labels on an appointment read "16 Sep · 08:00"; the schedule carries the weekday. */
+  function slotLabels(facility) {
+    const out = [];
+    slotsFor(facility).forEach(d => d.times.forEach(t => out.push(d.day.replace(/^\S+ /, '') + ' · ' + t)));
+    return out;
+  }
+  /* The alternative a facility offers when it proposes a new time — its own next published slot. */
+  function proposedSlotFor(facility, currentSlot) {
+    const flat = slotLabels(facility);
+    return flat.find(s => s !== currentSlot) || flat[0] || '';
+  }
+  /* A patient has 48 hours to answer a proposed time before it returns to the facility. */
+  const RESPOND_WINDOW = 2880;
+  function countdown(minsLeft) {
+    if (minsLeft <= 0) return 'No response — returned to the facility';
+    if (minsLeft < 60) return minsLeft + ' minutes left to respond';
+    const h = Math.round(minsLeft / 60);
+    return h + (h === 1 ? ' hour left to respond' : ' hours left to respond');
+  }
+
+  const REFERRED_PATH = ['Created', 'Sent', 'Received', 'Accepted', 'Patient arrived', 'Endorsed', 'Completed'];
+  const PERSONAL_PATH = ['Booked', 'Received', 'Accepted', 'Patient arrived', 'Endorsed', 'Completed'];
+  const ACTOR_OF = {
+    Created: 'rhu', Sent: 'rhu', Booked: 'patient', Received: 'lab', Accepted: 'lab',
+    Declined: 'lab', 'Patient arrived': 'lab', 'No-show': 'lab', Endorsed: 'lab',
+    'Result voided': 'lab', 'Consent revoked': 'patient', 'Reschedule proposed': 'lab',
+  };
+
+  /* Overdue is derived from the row, never written to the trail (brief §2.2). */
+  function trailFor(status, lab, patient, startMinutes, origin, referrer) {
+    const FROM = referrer || RHU;
+    const FROM_STAFF = referrer ? LAB_STAFF[referrer] : RHU_STAFF;
+    const PATH = origin === 'Personal' ? PERSONAL_PATH : REFERRED_PATH;
+    const head = PATH.slice(0, PATH.indexOf('Received'));
+    let chain;
+    if (status === 'Declined') chain = head.concat(['Received', 'Declined']);
+    else if (status === 'No-show') chain = head.concat(['Received', 'Accepted', 'No-show']);
+    else if (status === 'Overdue') chain = head.concat(['Received', 'Accepted']);
+    else if (status === 'Reschedule proposed') chain = head.concat(['Received', 'Reschedule proposed']);
+    else if (status === 'Consent revoked') chain = head.concat(['Received', 'Consent revoked']);
+    else if (status === 'Result voided') chain = head.concat(['Received', 'Accepted', 'Patient arrived', 'Endorsed', 'Result voided']);
+    else chain = PATH.slice(0, PATH.indexOf(status) + 1);
+    const step = startMinutes / (chain.length + 1);
+    return chain.map((s, i) => {
+      const t = Math.round(startMinutes - i * step);
+      /* Completed is the RHU's acknowledgement when referred, the patient's when personal. */
+      const who = s === 'Completed' ? (origin === 'Personal' ? 'patient' : 'rhu') : ACTOR_OF[s];
+      return {
+        status: s,
+        _m: t,
+        at: stamp(t),
+        actor: who === 'rhu' ? FROM_STAFF : who === 'lab' ? LAB_STAFF[lab] : patient.split(', ').reverse().join(' '),
+        facility: who === 'rhu' ? FROM : who === 'lab' ? lab : 'Health wallet',
+      };
+    });
+  }
+
+  /* Minutes before 15 Sep 2026 09:41 → "13 Sep · 14:29". Negative minutes are in the future. */
+  function stamp(minutesBefore) {
+    const base = new Date(2026, 8, 15, 9, 41);
+    const d = new Date(base.getTime() - minutesBefore * 60000);
+    const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getDate()) + ' ' + mon + ' · ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  /* Booked slots sit on the half hour, so they are rounded off the running clock. */
+  function slotDate(minutesBefore) {
+    const base = new Date(2026, 8, 15, 9, 41);
+    const d = new Date(base.getTime() - minutesBefore * 60000);
+    d.setMinutes(d.getMinutes() - (d.getMinutes() % 30), 0, 0);
+    /* Laboratories open 07:00-16:00, so slots are folded into opening hours. */
+    const h = d.getHours();
+    if (h < 7 || h > 16) d.setHours(7 + (h % 10));
+    return d;
+  }
+  function clock(minutesBefore) {
+    const d = slotDate(minutesBefore);
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function slotStamp(minutesBefore) {
+    const d = slotDate(minutesBefore);
+    const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getDate()) + ' ' + mon + ' · ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  const PEOPLE = [
+    ['Abdon, Maricel', 'PH-4409-1182', 34, 'F', 'Loon'],
+    ['Bagatsing, Lorenzo', 'PH-3318-0924', 61, 'M', 'Tagbilaran'],
+    ['Cadapan, Reynaldo', 'PH-7712-4408', 58, 'M', 'Baclayon'],
+    ['Lumandas, Imelda', 'PH-1180-6631', 47, 'F', 'Dauis'],
+    ['Espuerta, Nolan', 'PH-6620-3390', 29, 'M', 'Panglao'],
+    ['Fuentebella, Rosalie', 'PH-2204-7751', 66, 'F', 'Loboc'],
+    ['Hinlo, Teofilo', 'PH-9931-2205', 72, 'M', 'Loon'],
+    ['Inting, Marivic', 'PH-5540-8817', 41, 'F', 'Tagbilaran'],
+    ['Jamisola, Ariel', 'PH-8812-0031', 36, 'M', 'Panglao'],
+    ['Kabiling, Perla', 'PH-3390-6614', 55, 'F', 'Baclayon'],
+    ['Labunog, Efren', 'PH-7743-2298', 63, 'M', 'Loboc'],
+    ['Magallanes, Cristina', 'PH-1129-5583', 38, 'F', 'Dauis'],
+    ['Nazareno, Bienvenido', 'PH-4471-9920', 70, 'M', 'Loon'],
+    ['Oclarit, Jasmin', 'PH-6638-1174', 26, 'F', 'Tagbilaran'],
+    ['Pagulayan, Rodel', 'PH-2285-4406', 49, 'M', 'Panglao'],
+    ['Quirante, Lorna', 'PH-9903-7718', 52, 'F', 'Loon'],
+    ['Racoma, Alfredo', 'PH-5517-3384', 68, 'M', 'Baclayon'],
+    ['Sarabia, Nenita', 'PH-1174-8829', 59, 'F', 'Loboc'],
+    ['Tirambulo, Glenda', 'PH-7796-2241', 44, 'F', 'Dauis'],
+    ['Umbao, Fidel', 'PH-3342-6650', 31, 'M', 'Loon'],
+    ['Valeroso, Marissa', 'PH-8829-1107', 37, 'F', 'Tagbilaran'],
+    ['Wenceslao, Dante', 'PH-4408-5573', 64, 'M', 'Panglao'],
+    ['Ybanez, Corazon', 'PH-6651-9938', 74, 'F', 'Baclayon'],
+    ['Zafra, Melchor', 'PH-2217-4485', 45, 'M', 'Loboc'],
+    ['Amodia, Felisa', 'PH-9938-3306', 57, 'F', 'Dauis'],
+    ['Boteros, Ruben', 'PH-5573-1129', 33, 'M', 'Loon'],
+    ['Casiple, Elvira', 'PH-1107-6642', 48, 'F', 'Tagbilaran'],
+    ['Dumaluan, Arnel', 'PH-7718-2295', 62, 'M', 'Panglao'],
+    ['Empuerto, Luzviminda', 'PH-3384-8816', 51, 'F', 'Baclayon'],
+    ['Garcia-Amper, Dina', 'PH-6614-4471', 39, 'F', 'Loboc'],
+  ].map(([name, id, age, sex, municipality]) => ({ name, id, age, sex, municipality }));
+
+  /* [patientIndex, status, labIndex, [testIndexes], minutesSinceStart, scheduledMinutesBefore, origin, note, referredBy, referrer]
+     Negative scheduledMinutesBefore is a slot still in the future. referrer names the
+     originating facility when it is not the health centre — a clinic with can_refer set. */
+  const SEED = [
+    [3,  'Overdue',          0, [3],    7400, 5880,  'Referred', 'Persistent cough, three weeks. Rule out pulmonary tuberculosis.', null],
+    [1,  'Declined',         1, [1],    36,   -1080, 'Referred', 'Polyuria and weight loss. Baseline glucose needed.', null],
+    [0,  'Patient arrived',  2, [0],    43,   20,    'Referred', 'Pallor and fatigue since July. Anaemia workup.', null],
+    [2,  'Endorsed',         3, [2],    60,   180,   'Referred', 'Dysuria, two days. Suspected urinary tract infection.', null],
+    [4,  'Accepted',         4, [0],    71,   -1380, 'Referred', 'Pre-employment screening, barangay requirement.', null],
+    [5,  'Overdue',          5, [1],    6200, 4560,  'Referred', 'Known diabetic, no reading since March.', null],
+    [6,  'Sent',             0, [3],    106,  -1500, 'Referred', 'Shortness of breath on exertion.', null],
+    [7,  'Created',          1, [2],    117,  -2940, 'Referred', 'Recurrent flank pain.', null],
+    [8,  'Consent revoked',  2, [0],    970,  -420,  'Referred', 'Routine screening.', null],
+    [9,  'Completed',        3, [1],    1003, 660,   'Referred', 'Gestational diabetes screening.', null],
+    [10, 'Received',         4, [2],    1021, -1020, 'Referred', 'Follow-up after antibiotic course.', null],
+    [11, 'Accepted',         5, [3],    1047, -1440, 'Referred', 'Chest pain, atypical. Imaging requested.', null],
+    [12, 'Endorsed',         0, [0],    1074, 720,   'Referred', 'Pre-operative clearance.', null],
+    [13, 'Declined',         1, [3],    1101, -960,  'Referred', 'Cough with fever. Referring for plain film.', null],
+    [14, 'Completed',        2, [2],    1129, 840,   'Referred', 'Haematuria on urine dipstick.', null],
+    [15, 'Booked',           3, [4],    240,  -1260, 'Personal', 'Dog bite on the left calf, two days ago.', 'Dr. Ofelia Carcallas, Loon district clinic'],
+    [16, 'Patient arrived',  4, [1],    1182, 60,    'Referred', 'Diabetic, quarterly monitoring.', null],
+    [17, 'No-show',          5, [2],    5300, 4200,  'Referred', 'Suspected recurrent infection.', null],
+    [18, 'Received',         0, [1, 5], 1253, -900,  'Personal', 'Annual check, no provider decision needed.', null],
+    [19, 'Completed',        1, [0],    1324, 960,   'Referred', 'Fatigue, rule out anaemia.', null],
+    [20, 'Accepted',         2, [3],    1359, -1320, 'Referred', 'Pneumonia follow-up imaging.', null],
+    [21, 'Result voided',    3, [2],    1397, 900,   'Referred', 'Dysuria with frequency.', null],
+    [22, 'Endorsed',         4, [0],    1430, 1020,  'Referred', 'Pre-transfusion baseline.', null],
+    [23, 'Consent revoked',  5, [1],    1709, -480,  'Referred', 'Routine glucose check.', null],
+    [24, 'Completed',        0, [7],    1746, 1140,  'Personal', 'Booked directly from the health wallet.', null],
+    [25, 'Received',         1, [3],    1783, -840,  'Referred', 'Occupational chest screening.', null],
+    [26, 'Booked',           2, [0],    300,  -1200, 'Personal', 'Routine blood count before a job application.', 'Loon Rural Health Unit'],
+    [27, 'Patient arrived',  3, [1],    1872, 90,    'Referred', 'Diabetic foot ulcer, baseline glucose.', null],
+    [28, 'Sent',             4, [6],    1915, -2880, 'Referred', 'Cough and night sweats.', null],
+    [29, 'Accepted',         5, [2],    1963, -1560, 'Referred', 'Suprapubic pain.', null],
+    [0,  'Reschedule proposed', 0, [0, 5], 120,  -2400, 'Personal', 'Booked directly from the health wallet.', null],
+    [2,  'Reschedule proposed', 1, [1],    210,  -1740, 'Referred', 'Known diabetic, quarterly monitoring.', null],
+    /* Referred out by Tagbilaran Diagnostic Center — a clinic that both refers and receives. */
+    [7,  'Sent',              1, [1],    150,  -1320, 'Referred', 'Fasting glucose. We do not run this panel.', null, 'Tagbilaran Diagnostic Center'],
+    [13, 'Endorsed',          4, [4],    400,  -900,  'Referred', 'Rabies vaccination, not stocked here.', null, 'Tagbilaran Diagnostic Center'],
+    [19, 'Completed',         3, [2],    2200, 1500,  'Referred', 'Urinalysis. Analyser down for service.', null, 'Tagbilaran Diagnostic Center'],
+  ];
+
+  const APPOINTMENTS = SEED.map(([pi, status, li, tis, mins, schedMins, origin, note, referredBy, referrer], i) => {
+    const patient = PEOPLE[pi];
+    const lab = LABS[li];
+    const trail = trailFor(status, lab, patient.name, mins, origin, referrer);
+    const latest = trail[trail.length - 1];
+    const tests = tis.map(t => TESTS[t]);
+    return {
+      id: 'APT-' + (412 - i),
+      patient: patient.name,
+      patientId: patient.id,
+      age: patient.age,
+      sex: patient.sex,
+      municipality: patient.municipality,
+      origin,
+      /* Which facility originated the appointment. Null when the patient booked it. */
+      fromFacility: origin === 'Personal' ? null : (referrer || RHU),
+      referredBy: referredBy || null,
+      lab,
+      labStaff: LAB_STAFF[lab],
+      tests,
+      test: tests.join(', '),
+      scheduledAt: slotStamp(schedMins),
+      scheduledTime: clock(schedMins),
+      scheduledPast: schedMins > 0,
+      schedMins,
+      note,
+      status,
+      updated: latest.at,
+      created: trail[0].at,
+      expectedBy: slotStamp(schedMins),
+      declineReason: status === 'Declined'
+        ? (i === 1
+          ? 'Analyser reagent out of stock until 18 September. Refer the patient to another partner laboratory.'
+          : 'Radiology unit closed for maintenance until 18 September. Your health centre has been told and will arrange another facility.')
+        : null,
+      proposedSlot: status === 'Reschedule proposed' ? proposedSlotFor(lab, slotStamp(schedMins)) : null,
+      proposedAt: status === 'Reschedule proposed' ? latest.at : null,
+      respondMinsLeft: status === 'Reschedule proposed' ? Math.max(0, RESPOND_WINDOW - mins) : null,
+      respondCountdown: status === 'Reschedule proposed' ? countdown(Math.max(0, RESPOND_WINDOW - mins)) : null,
+      rescheduleReason: status === 'Reschedule proposed'
+        ? 'The time you chose is no longer open at this facility.'
+        : null,
+      result: ['Endorsed', 'Completed', 'Result voided'].includes(status)
+        ? { file: 'result-' + (412 - i) + '.pdf', size: '148 KB', released: latest.at, by: LAB_STAFF[lab], voided: status === 'Result voided' }
+        : null,
+      trail,
+    };
+  });
+
+  const WALLET_PATIENT = PEOPLE[0];
+
+  /* The wallet patient owns four appointments, not two. Assigning them here rather than
+     grafting other patients' records onto her at render time is what keeps the RHU portal,
+     the laboratory portal and the wallet showing one patient per appointment ID. */
+  APPOINTMENTS.filter(a => a.patientId !== WALLET_PATIENT.id
+      && ['Endorsed', 'Accepted', 'Sent'].includes(a.status))
+    .slice(0, 2)
+    .forEach(a => { a.patient = WALLET_PATIENT.name; a.patientId = WALLET_PATIENT.id; });
+
+  /* Patient-entered, never computed or interpreted by VITAL (brief §5). */
+  const PROFILE = [
+    { label: 'Age', value: '34 years', updated: '02 Feb 2026' },
+    { label: 'Sex', value: 'Female', updated: '02 Feb 2026' },
+    { label: 'Height', value: '1.55 m', updated: '02 Feb 2026' },
+    { label: 'Weight', value: '58 kg', updated: '04 Aug 2026' },
+    { label: 'Blood type', value: 'O+', updated: '02 Feb 2026' },
+    { label: 'Allergies', value: 'Penicillin', updated: '11 Jun 2026' },
+  ];
+
+  const CONSENTS = [
+    { facility: 'Loon Rural Health Unit', kind: 'Referring provider', referralId: null, scope: 'Appointments and results you send through this health centre', granted: '02 Feb · 09:14', until: 'No end date', active: true },
+    { facility: 'Panglao Island Medical Lab', kind: 'Receiving facility', referralId: 'APT-410', scope: 'One appointment — CBC, APT-410', granted: '14 Sep · 08:12', until: 'When this appointment closes', active: true },
+    { facility: 'Loon Heritage Clinical Lab', kind: 'Receiving facility', referralId: 'APT-403', scope: 'One appointment — fasting blood sugar, APT-403', granted: '11 Sep · 10:02', until: 'Closed 13 Sep', active: false },
+  ];
+
+  const DOCUMENTS = [
+    { name: 'Urinalysis result', facility: 'Loon Heritage Clinical Lab', date: '13 Sep · 16:22', kind: 'Result', voided: false },
+    { name: 'Fasting blood sugar result', facility: 'Loon Heritage Clinical Lab', date: '11 Sep · 14:05', kind: 'Result', voided: false },
+    { name: 'Complete blood count result', facility: 'Tagbilaran Diagnostic Center', date: '28 Aug · 11:41', kind: 'Result', voided: true },
+    { name: 'Complete blood count result', facility: 'Tagbilaran Diagnostic Center', date: '28 Aug · 15:09', kind: 'Result', voided: false },
+  ];
+
+  /* Two bands, tier orders within a band only — never across it (brief §3.2).
+     A test is bookable at a facility when the facility offers it and does not require a
+     referral for it. One or more bookable tests and the row books; zero and it is disabled.
+     A referral requirement therefore never disables a row on its own. */
+  function rankFacilities(selected) {
+    const picked = selected && selected.length ? selected : [];
+    return FACILITIES
+      .map(f => {
+        const missing = picked.filter(t => !f.coverage.includes(t));
+        /* Tests this facility performs but only accepts with an RHU referral — declared at registration. */
+        const referralOnly = picked.filter(t => f.coverage.includes(t) && (f.referralTests || []).includes(t));
+        const bookable = picked.filter(t => f.coverage.includes(t) && !(f.referralTests || []).includes(t));
+        return {
+          ...f, missing, referralOnly, bookable,
+          blocked: picked.length > 0 && bookable.length === 0,
+          full: missing.length === 0,
+          have: picked.length - missing.length,
+        };
+      })
+      .filter(f => picked.length === 0 || f.have > 0)
+      .sort((a, b) =>
+        (a.full === b.full ? 0 : a.full ? -1 : 1) ||
+        (b.have - a.have) ||
+        (a.partner === b.partner ? 0 : a.partner ? -1 : 1));
+  }
+
+  /* Staff accounts. A user belongs to exactly one facility; there is no cross-facility login. */
+  const USERS = [{ name: RHU_STAFF, facility: RHU, role: 'Health centre staff' }].concat(
+    LABS.map(f => ({
+      name: LAB_STAFF[f],
+      facility: f,
+      role: capabilitiesOf(f).canRefer ? 'Clinic staff' : 'Laboratory staff',
+    })));
+
+  /* Every trail entry on every appointment, flattened. The trail rendered on a detail screen
+     and this list are the same records — not two sources. */
+  const STATUS_EVENTS = APPOINTMENTS.reduce((acc, a) => acc.concat(
+    a.trail.map(ev => ({
+      appointmentId: a.id, status: ev.status, at: ev.at, minutesBefore: ev._m,
+      actor: ev.actor, facility: ev.facility,
+    }))), []);
+
+  /* Only six transitions plus one 24-hour reminder reach the patient (brief §7). */
+  function notificationsFor(appointments) {
+    const out = [];
+    const push = (mins, kind, message, id) => { if (mins >= 0) out.push({ mins, at: stamp(mins), kind, message, appointmentId: id }); };
+    appointments.forEach(r => {
+      const day = (r.scheduledAt || '').split(' · ')[0];
+      const time = (r.scheduledAt || '').split(' · ')[1];
+      r.trail.forEach(ev => {
+        if (ev.status === 'Created' && r.origin === 'Referred') push(ev._m, 'Scheduled', RHU + ' scheduled an appointment for you on ' + day + '.', r.id);
+        if (ev.status === 'Reschedule proposed') push(ev._m, 'New time proposed', r.lab + ' proposed a new time for your appointment: ' + r.proposedSlot + '.', r.id);
+        if (ev.status === 'Accepted') push(ev._m, 'Confirmed', r.lab + ' confirmed your appointment.', r.id);
+        if (ev.status === 'Declined') push(ev._m, 'Declined', r.lab + ' couldn’t accept your appointment. Choose another facility.', r.id);
+        if (ev.status === 'Endorsed') push(ev._m, 'Result ready', 'Your result from ' + r.lab + ' is ready to view.', r.id);
+        if (ev.status === 'Consent revoked') push(ev._m, 'Access changed', 'You’ve removed ' + r.lab + '’s access.', r.id);
+      });
+      if (typeof r.schedMins === 'number' && !['Declined', 'No-show', 'Consent revoked', 'Completed'].includes(r.status)) {
+        push(r.schedMins + 1440, 'Reminder', 'Reminder: your appointment at ' + r.lab + ' is tomorrow at ' + time + '.', r.id);
+      }
+    });
+    return out.sort((a, b) => a.mins - b.mins);
+  }
+  const NOTIFICATIONS = notificationsFor(APPOINTMENTS.filter(a => a.patientId === PEOPLE[0].id));
+
+  window.VITAL_FIXTURE = {
+    RHU, RHU_STAFF, LABS, TESTS, TEST_META, FACILITIES, LAB_STAFF, PEOPLE,
+    CAPABILITIES, capabilitiesOf, SCHEDULE, slotsFor, slotLabels, proposedSlotFor,
+    RESPOND_WINDOW, countdown,
+    APPOINTMENTS, REFERRALS: APPOINTMENTS, CONSENTS, DOCUMENTS, PROFILE,
+    WALLET_PATIENT, stamp, clock, slotStamp, trailFor, rankFacilities,
+    USERS, STATUS_EVENTS, NOTIFICATIONS, notificationsFor,
+    /* Canonical collection names. Same objects as above, not copies. */
+    patients: PEOPLE, facilities: FACILITIES, users: USERS, appointments: APPOINTMENTS,
+    status_events: STATUS_EVENTS, documents: DOCUMENTS, consent_grants: CONSENTS,
+    published_slots: SCHEDULE, notifications: NOTIFICATIONS, tests: TEST_META,
+    SLOTS: slotsFor('Tagbilaran Diagnostic Center'),
+    LAB_SIGNED_IN: 'Tagbilaran Diagnostic Center',
+  };
+})();
+
+  </script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
+  <style>
+    body { margin: 0; background: var(--color-mint-veil); }
+    a { color: var(--color-forest-ink); }
+    a:hover { color: var(--color-forest-shadow); }
+    *:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+    .ms { font-family: 'Material Symbols Rounded'; font-weight: normal; font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
+  </style>
+</helmet>
+<div style="min-height:100vh;background:var(--color-mint-veil);font-family:var(--font-sans);color:var(--color-charcoal);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;align-items:center;gap:16px;padding:24px 16px 48px">
+
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center">
+    <span style="font-size:12px;color:var(--color-forest-ink)">Prototype screens</span>
+    <sc-for list="{{ screens }}" as="s" hint-placeholder-count="5">
+      <button type="button" onClick="{{ s.go }}" style="height:32px;padding:0 12px;border-radius:999px;border:1px solid {{ s.border }};background:{{ s.bg }};color:{{ s.ink }};font-family:var(--font-sans);font-size:12px;font-weight:{{ s.weight }};cursor:pointer">{{ s.label }}</button>
+    </sc-for>
+  </div>
+
+  <div data-density="comfortable" style="width:390px;max-width:100%;min-height:780px;background:var(--color-cream-paper);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;font-size:16px;line-height:1.55">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px 0;font-size:12px;color:var(--color-charcoal-muted);font-variant-numeric:tabular-nums">
+      <span>09:41</span>
+      <span style="display:flex;gap:6px"><span class="ms" style="font-size:14px">signal_cellular_alt</span><span class="ms" style="font-size:14px">wifi</span><span class="ms" style="font-size:14px">battery_full</span></span>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 8px 0 20px">
+      <span style="font-family:var(--font-sans);font-size:13px;font-weight:600;letter-spacing:0.14em;color:var(--color-forest-ink)">VITAL</span>
+      <button type="button" onClick="{{ goNotifications }}" aria-label="{{ bellLabel }}" style="position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;min-width:48px;padding:0 12px;border:0;border-radius:var(--radius-control);background:{{ bellBg }};color:var(--color-forest-ink);font-family:var(--font-sans);font-size:12px;cursor:pointer">
+        <span class="ms" style="font-size:24px">notifications</span>
+        <sc-if value="{{ hasUnread }}" hint-placeholder-val="{{ true }}">
+          <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:var(--radius-badge);background:var(--color-forest-ink);color:var(--color-cream-paper);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums">{{ unreadCount }} new</span>
+        </sc-if>
+      </button>
+    </div>
+
+    <div style="flex:1;padding:16px 16px 96px;display:flex;flex-direction:column;gap:24px" data-comment-anchor="9ceac2505d-div">
+
+      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;letter-spacing:0.01em;color:var(--color-forest-ink)">Your health wallet</h1>
+            <p style="margin:0;font-size:16px;color:var(--color-charcoal-muted)">{{ patientName }} · {{ patientId }}</p>
+          </div>
+
+          <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:8px">
+            <span style="font-family:var(--font-serif);font-weight:300;font-size:20px;color:var(--color-forest-ink)">You decide who can see your record</span>
+            <span style="font-size:16px">{{ accessLine }}</span>
+            <button type="button" onClick="{{ goConsent }}" style="align-self:flex-start;margin-top:8px;min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:transparent;font-family:var(--font-sans);font-size:16px;font-weight:500;color:var(--color-forest-ink);cursor:pointer">Review who has access</button>
+          </div>
+
+          <button type="button" onClick="{{ goBookTests }}" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:var(--color-forest-ink);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:pointer"><span class="ms" style="font-size:24px">event_available</span>Book an appointment</button>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <h2 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:24px;color:var(--color-forest-ink)">Appointments in progress</h2>
+            <sc-for list="{{ activeAppointments }}" as="r" hint-placeholder-count="2">
+              <button type="button" onClick="{{ r.open }}" style="text-align:left;background:var(--color-cream-paper);border:1px solid var(--color-border-strong);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:8px;cursor:pointer;font-family:var(--font-sans);font-size:16px;color:var(--color-charcoal)">
+                <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:var(--radius-badge);font-size:12px;font-weight:500;background:{{ r.fill }};color:{{ r.ink }};align-self:flex-start">{{ r.iconEl }}{{ r.plainBadge }}</span>
+                <span style="font-weight:500">{{ r.test }}</span>
+                <span style="color:var(--color-charcoal-muted);font-size:16px">{{ r.plainLine }}</span>
+                <sc-if value="{{ r.hasCountdown }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:flex;gap:8px;align-items:center;color:var(--color-amber-hold);font-size:16px;font-variant-numeric:tabular-nums"><span class="ms" style="font-size:20px">hourglass_top</span>{{ r.respondCountdown }}</span>
+                </sc-if>
+                <span style="color:var(--color-charcoal-muted);font-size:12px;font-variant-numeric:tabular-nums">{{ r.updated }}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <h2 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:24px;color:var(--color-forest-ink)">Recent results</h2>
+            <sc-for list="{{ recentDocs }}" as="d" hint-placeholder-count="2">
+              <div style="display:flex;gap:16px;align-items:flex-start;padding:16px 0;border-bottom:1px solid var(--color-border-strong)">
+                <span class="ms" style="font-size:24px;color:var(--color-forest-ink)">description</span>
+                <div style="display:flex;flex-direction:column;min-width:0">
+                  <span style="font-weight:500">{{ d.name }}</span>
+                  <span style="color:var(--color-charcoal-muted);font-size:16px">{{ d.facility }}</span>
+                  <span style="color:var(--color-charcoal-muted);font-size:12px;font-variant-numeric:tabular-nums">{{ d.date }}</span>
+                </div>
+              </div>
+            </sc-for>
+            <button type="button" onClick="{{ goDocs }}" style="align-self:flex-start;min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:transparent;font-family:var(--font-sans);font-size:16px;font-weight:500;color:var(--color-forest-ink);cursor:pointer">See all documents</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <button type="button" onClick="{{ goHome }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 12px 0 4px;border:0;background:transparent;font-family:var(--font-sans);font-size:16px;color:var(--color-forest-ink);cursor:pointer"><span class="ms" style="font-size:24px">arrow_back</span>Wallet home</button>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">{{ detail.test }}</h1>
+            <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:var(--radius-badge);font-size:12px;font-weight:500;background:{{ detail.fill }};color:{{ detail.ink }};align-self:flex-start">{{ detail.iconEl }}{{ detail.plainBadge }}</span>
+            <p style="margin:0;font-size:16px">{{ detail.plainLead }}</p>
+          </div>
+
+          <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:4px">
+            <span style="font-weight:500">{{ detail.lab }}</span>
+            <span style="color:var(--color-charcoal-muted);font-size:16px">{{ detail.originLine }}</span>
+            <span style="font-variant-numeric:tabular-nums;font-size:16px">{{ detail.slotLine }}</span>
+          </div>
+
+          <sc-if value="{{ detail.isProposed }}" hint-placeholder-val="{{ false }}">
+            <div style="border-left:3px solid var(--color-amber-hold);background:var(--color-amber-wash);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:12px;font-size:16px">
+              <span style="font-weight:500;color:var(--color-amber-hold)">{{ detail.lab }} proposed a new time</span>
+              <span style="font-variant-numeric:tabular-nums">{{ detail.proposedSlot }}</span>
+              <span style="font-variant-numeric:tabular-nums;color:var(--color-charcoal-muted)">{{ detail.respondCountdown }}</span>
+              <button type="button" onClick="{{ goProposed }}" style="align-self:flex-start;min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:transparent;font-family:var(--font-sans);font-size:16px;font-weight:500;color:var(--color-forest-ink);cursor:pointer">See the proposed time</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ detail.hasSummary }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:12px;font-size:16px">
+              <span style="font-weight:500">{{ detail.summary.headline }}</span>
+              <span>Included — {{ detail.summary.included }}</span>
+              <sc-if value="{{ detail.summary.hasExcluded }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <span style="color:var(--color-charcoal-muted)">Not included:</span>
+                  <sc-if value="{{ detail.summary.hasNotOffered }}" hint-placeholder-val="{{ false }}">
+                    <span>· {{ detail.summary.notOffered }} — not offered here</span>
+                  </sc-if>
+                  <sc-if value="{{ detail.summary.hasReferral }}" hint-placeholder-val="{{ false }}">
+                    <span>· {{ detail.summary.referral }} — referral required from your health centre</span>
+                  </sc-if>
+                  <span style="color:var(--color-charcoal-muted)">{{ detail.summary.separateLine }}</span>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <h2 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:24px;color:var(--color-forest-ink)">What has happened</h2>
+            <ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:16px" data-comment-anchor="0a8f8d8323-ol">
+              <sc-for list="{{ detail.plainTrail }}" as="e" hint-placeholder-count="3">
+                <li style="display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:16px;align-items:start">
+                  <span class="ms" style="font-size:20px;color:{{ e.hue }};padding-top:2px">{{ e.glyph }}</span>
+                  <div style="display:flex;flex-direction:column">
+                    <span>{{ e.line }}</span>
+                    <span style="color:var(--color-charcoal-muted);font-size:12px;font-variant-numeric:tabular-nums">{{ e.at }}</span>
+                  </div>
+                </li>
+              </sc-for>
+            </ol>
+          </div>
+
+          <sc-if value="{{ detail.nothingToDo }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:24px;font-size:16px">You do not need to do anything. {{ detail.lab }} will tell you when to come in.</div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDocs }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">Documents</h1>
+          <p style="margin:0;font-size:16px;color:var(--color-charcoal-muted)">Results and prescriptions, newest first. VITAL does not explain what a result means — ask the provider who ordered it.</p>
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ documents }}" as="d" hint-placeholder-count="4">
+              <div style="display:flex;gap:16px;align-items:flex-start;padding:16px 0;border-bottom:1px solid var(--color-border-strong)">
+                <span class="ms" style="font-size:24px;color:{{ d.hue }}">{{ d.glyph }}</span>
+                <div style="display:flex;flex-direction:column;min-width:0;gap:2px">
+                  <span style="font-weight:500;color:{{ d.hue }}">{{ d.name }}</span>
+                  <span style="color:var(--color-charcoal-muted);font-size:16px">{{ d.facility }}</span>
+                  <span style="color:var(--color-charcoal-muted);font-size:12px;font-variant-numeric:tabular-nums">{{ d.date }}</span>
+                  <sc-if value="{{ d.voided }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:16px;color:var(--color-clay-alert)">This document was withdrawn by the laboratory because it was attached to the wrong person. It is kept in your record so the correction is visible.</span>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isConsent }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">Who can see your record</h1>
+            <p style="margin:0;font-size:16px">You decide who can see your record. Stopping a facility does not delete anything they have already read.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <sc-for list="{{ consents }}" as="c" hint-placeholder-count="3">
+              <div style="border:1px solid var(--color-border-strong);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:8px">
+                <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:var(--radius-badge);font-size:12px;font-weight:500;background:{{ c.fill }};color:{{ c.ink }};align-self:flex-start"><span class="ms" style="font-size:16px">{{ c.glyph }}</span>{{ c.state }}</span>
+                <span style="font-weight:500">{{ c.facility }}</span>
+                <span style="font-size:16px">{{ c.scope }}</span>
+                <span style="font-size:12px;color:var(--color-charcoal-muted);font-variant-numeric:tabular-nums">Granted {{ c.granted }} · {{ c.until }}</span>
+                <sc-if value="{{ c.active }}" hint-placeholder-val="{{ false }}">
+                  <button type="button" onClick="{{ c.revoke }}" style="align-self:flex-start;margin-top:8px;min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-clay-alert);background:transparent;font-family:var(--font-sans);font-size:16px;font-weight:500;color:var(--color-clay-alert);cursor:pointer">Stop sharing</button>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isRevoke }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <button type="button" onClick="{{ goConsent }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 12px 0 4px;border:0;background:transparent;font-family:var(--font-sans);font-size:16px;color:var(--color-forest-ink);cursor:pointer"><span class="ms" style="font-size:24px">arrow_back</span>Who can see your record</button>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">Stop sharing with {{ revoke.facility }}?</h1>
+            <div style="border-left:3px solid var(--color-clay-alert);background:var(--color-clay-wash);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:12px;font-size:16px">
+              <span>{{ revoke.facility }} will no longer be able to open your record.</span>
+              <span>{{ revoke.consequence }}</span>
+              <span>Anything they have already read stays with them. Your record keeps a note that you stopped sharing, with today's date.</span>
+            </div>
+            <p style="margin:0;font-size:16px;color:var(--color-charcoal-muted)">You can grant access again later. A new appointment will ask you again.</p>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <button type="button" onClick="{{ confirmRevoke }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-clay-alert);background:var(--color-clay-alert);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:pointer">Stop sharing</button>
+              <button type="button" onClick="{{ goConsent }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-border-input);background:transparent;font-family:var(--font-sans);font-size:16px;font-weight:500;color:var(--color-forest-ink);cursor:pointer">Keep sharing</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isBookTests }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <button type="button" onClick="{{ goHome }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 12px 0 4px;border:0;background:transparent;font-family:var(--font-sans);font-size:16px;color:var(--color-forest-ink);cursor:pointer"><span class="ms" style="font-size:24px">arrow_back</span>Wallet home</button>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">What do you need?</h1>
+            <p style="margin:0;font-size:16px">Choose one or more tests. You can change this later.</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ testList }}" as="t" hint-placeholder-count="8">
+              <button type="button" onClick="{{ t.toggle }}" aria-pressed="{{ t.on }}" style="display:flex;align-items:center;gap:16px;text-align:left;min-height:56px;padding:8px 16px;border-radius:var(--radius-control);border:1px solid {{ t.border }};background:{{ t.bg }};font-family:var(--font-sans);font-size:16px;color:var(--color-charcoal);cursor:pointer">
+                <span class="ms" style="font-size:24px;color:var(--color-forest-ink)">{{ t.glyph }}</span>
+                <span style="font-weight:{{ t.weight }}">{{ t.name }}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ showReferralAdvisory }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:24px;display:flex;gap:12px;align-items:flex-start;font-size:16px">
+              <span class="ms" style="font-size:24px;color:var(--color-forest-ink)">assignment</span>
+              <span>{{ referralAdvisory }}</span>
+            </div>
+          </sc-if>
+
+          <button type="button" onClick="{{ goBookFacility }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid {{ nextTestsBorder }};background:{{ nextTestsBg }};color:{{ nextTestsInk }};font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:{{ nextTestsCursor }}">Choose a facility</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isBookFacility }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <button type="button" onClick="{{ goBookTests }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 12px 0 4px;border:0;background:transparent;font-family:var(--font-sans);font-size:16px;color:var(--color-forest-ink);cursor:pointer"><span class="ms" style="font-size:24px">arrow_back</span>Tests</button>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">Where do you want to go?</h1>
+            <p style="margin:0;font-size:16px;color:var(--color-charcoal-muted)">{{ pickedLine }}</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <sc-if value="{{ hasFullMatch }}" hint-placeholder-val="{{ true }}">
+              <h2 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:24px;color:var(--color-forest-ink)">Offers every test you chose</h2>
+            </sc-if>
+            <sc-if value="{{ noFullMatch }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:0;font-size:16px;color:var(--color-charcoal-muted)">{{ fullMatchEmptyLine }}</p>
+            </sc-if>
+            <sc-for list="{{ fullMatch }}" as="f" hint-placeholder-count="2">
+              <button type="button" onClick="{{ f.pick }}" aria-pressed="{{ f.on }}" aria-disabled="{{ f.blocked }}" style="text-align:left;border:1px solid {{ f.border }};background:{{ f.bg }};border-radius:var(--radius-card);padding:20px;display:flex;flex-direction:column;gap:4px;font-family:var(--font-sans);font-size:16px;color:{{ f.ink }};cursor:{{ f.cursor }}">
+                <span style="font-weight:500">{{ f.name }}</span>
+                <span style="color:var(--color-charcoal-muted);font-size:16px">{{ f.where }}</span>
+                <span style="font-size:16px">{{ f.booksLine }}</span>
+                <sc-if value="{{ f.hasReferralLine }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:flex;gap:8px;align-items:flex-start;margin-top:4px;color:var(--color-amber-hold);font-size:16px"><span class="ms" style="font-size:20px">assignment_late</span>{{ f.referralLine }}</span>
+                </sc-if>
+                <sc-if value="{{ f.partner }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:4px;padding:2px 10px;border-radius:var(--radius-badge);border:1px solid var(--color-border-input);font-size:12px;color:var(--color-charcoal)"><span class="ms" style="font-size:14px">handshake</span>Partner facility</span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <h2 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:24px;color:var(--color-forest-ink)">Offers some of your tests</h2>
+            <sc-for list="{{ partialMatch }}" as="f" hint-placeholder-count="2">
+              <button type="button" onClick="{{ f.pick }}" aria-pressed="{{ f.on }}" aria-disabled="{{ f.blocked }}" style="text-align:left;border:1px solid {{ f.border }};background:{{ f.bg }};border-radius:var(--radius-card);padding:20px;display:flex;flex-direction:column;gap:4px;font-family:var(--font-sans);font-size:16px;color:{{ f.ink }};cursor:{{ f.cursor }}">
+                <span style="font-weight:500">{{ f.name }}</span>
+                <span style="color:var(--color-charcoal-muted);font-size:16px">{{ f.where }}</span>
+                <span style="font-size:16px">{{ f.booksLine }}</span>
+                <sc-if value="{{ f.hasMissingLine }}" hint-placeholder-val="{{ false }}">
+                  <span style="color:var(--color-charcoal-muted);font-size:16px">{{ f.missingLine }}</span>
+                </sc-if>
+                <sc-if value="{{ f.hasReferralLine }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:flex;gap:8px;align-items:flex-start;margin-top:4px;color:var(--color-amber-hold);font-size:16px"><span class="ms" style="font-size:20px">assignment_late</span>{{ f.referralLine }}</span>
+                </sc-if>
+                <sc-if value="{{ f.partner }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:4px;padding:2px 10px;border-radius:var(--radius-badge);border:1px solid var(--color-border-input);font-size:12px;color:var(--color-charcoal)"><span class="ms" style="font-size:14px">handshake</span>Partner facility</span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+
+          <p style="margin:0;font-size:12px;color:var(--color-charcoal-muted)">Facilities that offer every test you chose are always listed first, whether or not they pay for a partner listing.</p>
+
+          <sc-if value="{{ hasBlocked }}" hint-placeholder-val="{{ false }}">
+            <div style="border-left:3px solid var(--color-amber-hold);background:var(--color-amber-wash);border-radius:var(--radius-card);padding:24px;display:flex;gap:12px;align-items:flex-start">
+              <span class="ms" style="font-size:24px;color:var(--color-amber-hold)">assignment_late</span>
+              <div style="display:flex;flex-direction:column;gap:4px;font-size:16px">
+                <span style="font-weight:500;color:var(--color-amber-hold)">{{ blockedHeadline }}</span>
+                <span>{{ blockedBody }}</span>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <h2 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:24px;color:var(--color-forest-ink)">Pick a time</h2>
+            <p style="margin:0;font-size:16px;color:var(--color-charcoal-muted)">{{ slotHeading }}</p>
+            <sc-if value="{{ hasSlots }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <sc-for list="{{ slotList }}" as="sl" hint-placeholder-count="6">
+                  <button type="button" onClick="{{ sl.pick }}" aria-pressed="{{ sl.on }}" style="min-height:48px;padding:0 16px;border-radius:var(--radius-control);border:1px solid {{ sl.border }};background:{{ sl.bg }};color:{{ sl.ink }};font-family:var(--font-sans);font-size:16px;font-variant-numeric:tabular-nums;cursor:pointer">{{ sl.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ noSlots }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:0;font-size:16px">{{ noSlotsLine }}</p>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ hasSummary }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:12px;font-size:16px">
+              <span style="font-weight:500">{{ summary.headline }}</span>
+              <span>Included — {{ summary.included }}</span>
+              <sc-if value="{{ summary.hasExcluded }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <span style="color:var(--color-charcoal-muted)">Not included:</span>
+                  <sc-if value="{{ summary.hasNotOffered }}" hint-placeholder-val="{{ false }}">
+                    <span>· {{ summary.notOffered }} — not offered here</span>
+                  </sc-if>
+                  <sc-if value="{{ summary.hasReferral }}" hint-placeholder-val="{{ false }}">
+                    <span>· {{ summary.referral }} — referral required from your health centre</span>
+                  </sc-if>
+                  <span style="color:var(--color-charcoal-muted)">{{ summary.separateLine }}</span>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <button type="button" onClick="{{ book }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid {{ bookBorder }};background:{{ bookBg }};color:{{ bookInk }};font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:{{ bookCursor }}">Book appointment</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isBooked }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">Your appointment is booked</h1>
+            <span style="display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:4px 12px;border-radius:var(--radius-badge);font-size:12px;font-weight:500;background:var(--status-waiting-fill);color:var(--status-waiting-ink)"><span class="ms" style="font-size:16px">event_available</span>Booked</span>
+            <p style="margin:0;font-size:16px">You do not need to do anything until then. Bring a valid ID.</p>
+          </div>
+
+          <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">Facility</span>
+              <span style="font-weight:500">{{ booked.facility }}</span>
+              <span style="font-size:16px;color:var(--color-charcoal-muted)">{{ booked.where }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">Tests</span>
+              <span style="font-weight:500">{{ summary.headline }}</span>
+              <span>Included — {{ summary.included }}</span>
+              <sc-if value="{{ summary.hasExcluded }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <span style="color:var(--color-charcoal-muted)">Not included:</span>
+                  <sc-if value="{{ summary.hasNotOffered }}" hint-placeholder-val="{{ false }}">
+                    <span>· {{ summary.notOffered }} — not offered here</span>
+                  </sc-if>
+                  <sc-if value="{{ summary.hasReferral }}" hint-placeholder-val="{{ false }}">
+                    <span>· {{ summary.referral }} — referral required from your health centre</span>
+                  </sc-if>
+                  <span style="color:var(--color-charcoal-muted)">{{ summary.separateLine }}</span>
+                </div>
+              </sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">Time</span>
+              <span style="font-weight:500;font-variant-numeric:tabular-nums">{{ booked.slot }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">Reference</span>
+              <span style="font-weight:500;font-variant-numeric:tabular-nums">{{ booked.id }}</span>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <label for="referredBy" style="font-size:16px;font-weight:500">Referred by (optional)</label>
+            <input id="referredBy" type="text" value="{{ referredBy }}" onChange="{{ setReferredBy }}" placeholder="Name of the clinic or provider" style="min-height:48px;padding:0 16px;border-radius:var(--radius-control);border:1px solid var(--color-border-input);background:var(--color-cream-paper);font-family:var(--font-sans);font-size:16px;color:var(--color-charcoal)">
+            <span style="font-size:12px;color:var(--color-charcoal-muted)">For the facility's reference. This does not give them access to your records.</span>
+          </div>
+
+          <button type="button" onClick="{{ goHome }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:var(--color-forest-ink);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:pointer">Back to wallet home</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">Your details</h1>
+            <p style="margin:0;font-size:16px">You entered these yourself. A facility sees them only while you are sharing your record with them.</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ profile }}" as="p" hint-placeholder-count="6">
+              <div style="display:flex;align-items:flex-start;gap:16px;padding:16px 0;border-bottom:1px solid var(--color-border-strong)">
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1">
+                  <span style="font-size:12px;color:var(--color-charcoal-muted)">{{ p.label }}</span>
+                  <span style="font-weight:500">{{ p.value }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:4px;padding:2px 10px;border-radius:var(--radius-badge);border:1px solid var(--color-border-input);font-size:12px;color:var(--color-charcoal);font-variant-numeric:tabular-nums"><span class="ms" style="font-size:14px">edit_note</span>You entered this · {{ p.updated }}</span>
+                </div>
+                <button type="button" style="min-height:48px;padding:0 16px;border-radius:var(--radius-control);border:1px solid var(--color-border-input);background:transparent;font-family:var(--font-sans);font-size:16px;color:var(--color-forest-ink);cursor:pointer">Change</button>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:24px;font-size:16px">VITAL does not read these details or decide anything from them. They are here because a facility often asks for them on paper.</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isProposed }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <button type="button" onClick="{{ goHome }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 12px 0 4px;border:0;background:transparent;font-family:var(--font-sans);font-size:16px;color:var(--color-forest-ink);cursor:pointer"><span class="ms" style="font-size:24px">arrow_back</span>Wallet home</button>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">A new time has been proposed</h1>
+            <span style="display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:4px 12px;border-radius:var(--radius-badge);font-size:12px;font-weight:500;background:var(--status-attention-fill);color:var(--status-attention-ink)"><span class="ms" style="font-size:16px">event_repeat</span>New time proposed</span>
+            <p style="margin:0;font-size:16px">{{ detail.lab }} cannot do the time you chose. You decide what happens next — nobody else can accept this for you.</p>
+          </div>
+
+          <div style="border-left:3px solid var(--color-amber-hold);background:var(--color-amber-wash);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:16px;font-size:16px">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">Your original time</span>
+              <span style="text-decoration:line-through;font-variant-numeric:tabular-nums">{{ detail.scheduledAt }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">Proposed time</span>
+              <span style="font-weight:500;font-size:20px;font-variant-numeric:tabular-nums;color:var(--color-amber-hold)">{{ detail.proposedSlot }}</span>
+            </div>
+            <span style="font-variant-numeric:tabular-nums;color:var(--color-charcoal-muted)">{{ detail.respondCountdown }}</span>
+            <span>If you do not answer in time, the appointment goes back to the facility as declined, with the reason "No response to proposed time."</span>
+          </div>
+
+          <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:16px;font-size:16px">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">Facility</span>
+              <span style="font-weight:500">{{ detail.lab }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">Tests</span>
+              <span style="font-weight:500">{{ detail.test }}</span>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <button type="button" onClick="{{ acceptProposed }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:var(--color-forest-ink);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:pointer">Accept new time</button>
+            <button type="button" onClick="{{ rebookElsewhere }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-border-input);background:transparent;font-family:var(--font-sans);font-size:16px;font-weight:500;color:var(--color-forest-ink);cursor:pointer">Choose another facility</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isNotifications }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">Notifications</h1>
+            <p style="margin:0;font-size:16px;color:var(--color-charcoal-muted)">Newest first. You are told when a facility acts on your appointment, and once the day before.</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ notifications }}" as="n" hint-placeholder-count="5">
+              <button type="button" onClick="{{ n.open }}" style="display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:16px;text-align:left;padding:16px 0;border:0;border-bottom:1px solid var(--color-border-strong);background:transparent;font-family:var(--font-sans);font-size:16px;color:var(--color-charcoal);cursor:pointer">
+                <span class="ms" style="font-size:24px;color:{{ n.hue }};padding-top:2px">{{ n.glyph }}</span>
+                <span style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                  <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                    <span style="display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:var(--radius-badge);border:1px solid var(--color-border-input);font-size:12px;color:{{ n.hue }}"><span class="ms" style="font-size:14px">{{ n.glyph }}</span>{{ n.kind }}</span>
+                    <sc-if value="{{ n.unread }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:var(--radius-badge);background:var(--color-forest-ink);color:var(--color-cream-paper);font-size:12px;font-weight:600">New</span>
+                    </sc-if>
+                  </span>
+                  <span style="font-weight:{{ n.weight }}">{{ n.message }}</span>
+                  <span style="font-size:12px;color:var(--color-charcoal-muted)">{{ n.ago }}</span>
+                </span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="position:absolute;bottom:0;left:0;right:0;display:flex;background:var(--color-cream-paper);border-top:1px solid var(--color-border-strong)">
+      <sc-for list="{{ tabbar }}" as="t" hint-placeholder-count="3">
+        <button type="button" onClick="{{ t.go }}" style="flex:1;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:{{ t.bg }};color:{{ t.ink }};font-family:var(--font-sans);font-size:12px;font-weight:{{ t.weight }};cursor:pointer;transition:background-color 120ms ease">
+          <span class="ms" style="font-size:24px">{{ t.glyph }}</span>{{ t.label }}
+        </button>
+      </sc-for>
+    </div>
+  </div>
+
+  <p style="margin:0;font-size:12px;color:var(--color-forest-ink);text-align:center">Synthetic records. Never place real patient data in a prototype.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { screen: 'home', selected: null, consents: null, referrals: null, revokeIndex: 1, seen: false,
+    booking: { tests: ['CBC', 'Chest X-ray'], facility: 'Dauis Bayview Laboratory', slot: 'Wed 16 Sep · 09:00', referredBy: '', id: 'APT-431' }, summaries: {} };
+
+  componentDidMount() {
+    /* The wallet's glyphs are Material Symbols, so data must never wait on the Lucide CDN. */
+    const load = () => {
+      const F = window.VITAL_FIXTURE;
+      if (!F) return false;
+      this.setState({
+        referrals: F.REFERRALS.filter(r => r.patientId === F.WALLET_PATIENT.id),
+        consents: F.CONSENTS.map(c => ({ ...c })),
+      });
+      return true;
+    };
+    if (!load()) this.tick = setInterval(() => { if (load()) clearInterval(this.tick); }, 60);
+  }
+  componentWillUnmount() { clearInterval(this.tick); }
+
+  icon(name, size) {
+    const node = window.lucide && window.lucide.icons && window.lucide.icons[name];
+    const box = { width: size, height: size, display: 'block', flex: '0 0 auto' };
+    if (!node) return React.createElement('span', { key: name, style: box });
+    const kids = (node[2] || []).map(([tag, attrs], i) => React.createElement(tag, Object.assign({ key: i }, attrs)));
+    return React.createElement('svg', { key: name, width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round', style: box, 'aria-hidden': 'true' }, kids);
+  }
+
+  /* Plain language, not system labels (brief §5.3). */
+  /* past: the line is a history entry, so it describes what happened and never asks the
+     patient to act — the action has already moved on. */
+  plain(r, past) {
+    const lab = r.lab;
+    if (past) {
+      const H = {
+        'Reschedule proposed': ['New time proposed', `${lab} could not do the time you chose and proposed another one.`, 'event_repeat'],
+      }[r.status];
+      if (H) return { plainStatus: H[0], plainLine: H[1], glyph: H[2] };
+    }
+    const P = {
+      Created: ['Being prepared', 'Your health centre is preparing this appointment.', 'edit_note'],
+      Sent: ['Sent to the laboratory', `${lab} has been asked to do this test.`, 'send'],
+      Booked: ['Booked', `Your appointment at ${lab} is booked. You do not need to do anything until then.`, 'event_available'],
+      Received: ['Seen by the laboratory', `${lab} has received your appointment.`, 'mark_email_read'],
+      Accepted: ['Ready for you', `${lab} is ready for you. You can go in during opening hours.`, 'event_available'],
+      'Patient arrived': ['You have been tested', `${lab} has taken your sample.`, 'how_to_reg'],
+      Endorsed: ['Result ready', `${lab} has released your result.`, 'description'],
+      Completed: ['Finished', 'Your health centre has read the result.', 'task_alt'],
+      Declined: ['Could not be done here', `${lab} could not do this test. Your health centre has been told and will arrange another laboratory.`, 'cancel'],
+      Overdue: ['Waiting for you', `${lab} is still expecting you. If you cannot go, tell your health centre.`, 'schedule'],
+      'No-show': ['Closed — you did not go', 'Your health centre closed this appointment. Ask them to send a new one if you still need the test.', 'person_off'],
+      'Consent revoked': ['You stopped sharing', 'You stopped sharing this appointment, so it was closed.', 'shield'],
+      'Reschedule proposed': ['New time proposed', `${lab} cannot do the time you chose and has proposed another one. Accept it, or choose another facility.`, 'event_repeat'],
+      'Result voided': ['Result withdrawn', `${lab} withdrew the result because it was attached to the wrong person. A correct result will follow.`, 'report'],
+    }[r.status] || ['In progress', '', 'schedule'];
+    return { plainBadge: P[0], plainLine: P[1], plainLead: P[1], glyph: P[2] };
+  }
+
+  skin(status) {
+    if (['Declined', 'Result voided'].includes(status)) return { fill: 'var(--status-fail-fill)', ink: 'var(--status-fail-ink)', hue: 'var(--color-clay-alert)', iconName: 'CircleX' };
+    if (['Overdue', 'No-show', 'Consent revoked', 'Reschedule proposed'].includes(status)) return { fill: 'var(--status-attention-fill)', ink: 'var(--status-attention-ink)', hue: 'var(--color-amber-hold)', iconName: status === 'Reschedule proposed' ? 'CalendarClock' : 'Clock' };
+    if (status === 'Completed') return { fill: 'var(--status-done-fill)', ink: 'var(--status-done-ink)', hue: 'var(--color-forest-ink)', iconName: 'CheckCheck' };
+    if (['Created', 'Sent', 'Booked'].includes(status)) return { fill: 'var(--status-waiting-fill)', ink: 'var(--status-waiting-ink)', hue: 'var(--color-forest-ink)', iconName: status === 'Booked' ? 'CalendarCheck' : 'Send' };
+    return { fill: 'var(--status-progress-fill)', ink: 'var(--status-progress-ink)', hue: 'var(--color-forest-ink)', iconName: 'Check' };
+  }
+
+  /* "2 hours ago" from minutes-before-now. */
+  ago(mins) {
+    if (mins < 2) return 'Just now';
+    if (mins < 60) return mins + ' minutes ago';
+    const h = Math.round(mins / 60);
+    if (h < 24) return h === 1 ? '1 hour ago' : h + ' hours ago';
+    const d = Math.round(mins / 1440);
+    return d === 1 ? 'Yesterday' : d + ' days ago';
+  }
+
+  /* Only these six transitions notify the patient (v0.2 brief). Nothing else. */
+  notify(refs) {
+    const F = window.VITAL_FIXTURE;
+    if (!F) return [];
+    const out = [];
+    const push = (mins, kind, glyph, hue, message, id) => { if (mins >= 0) out.push({ mins, kind, glyph, hue, message, id }); };
+    refs.forEach(r => {
+      const day = (r.scheduledAt || '').split(' · ')[0];
+      const time = (r.scheduledAt || '').split(' · ')[1];
+      r.trail.forEach(e => {
+        if (e.status === 'Created' && r.origin === 'Referred') {
+          push(e._m, 'Scheduled', 'event_upcoming', 'var(--color-forest-ink)', `${F.RHU} scheduled an appointment for you on ${day}.`, r.id);
+        }
+        if (e.status === 'Reschedule proposed') {
+          push(e._m, 'New time proposed', 'event_repeat', 'var(--color-amber-hold)',
+            `${r.lab} proposed a new time for your appointment: ${r.proposedSlot}.`, r.id);
+        }
+        if (e.status === 'Accepted') {
+          push(e._m, 'Confirmed', 'event_available', 'var(--color-forest-ink)', `${r.lab} confirmed your appointment.`, r.id);
+        }
+        if (e.status === 'Declined') {
+          push(e._m, 'Declined', 'cancel', 'var(--color-clay-alert)', `${r.lab} couldn’t accept your appointment. Choose another facility.`, r.id);
+        }
+        if (e.status === 'Endorsed') {
+          push(e._m, 'Result ready', 'description', 'var(--color-forest-ink)', `Your result from ${r.lab} is ready to view.`, r.id);
+        }
+        if (e.status === 'Consent revoked') {
+          push(e._m, 'Access changed', 'shield', 'var(--color-amber-hold)', `You’ve removed ${r.lab}’s access.`, r.id);
+        }
+      });
+      /* The one time-based notification: 24 hours before the slot. */
+      if (typeof r.schedMins === 'number' && !['Declined', 'No-show', 'Consent revoked', 'Completed'].includes(r.status)) {
+        push(r.schedMins + 1440, 'Reminder', 'schedule', 'var(--color-forest-ink)',
+          `Reminder: your appointment at ${r.lab} is tomorrow at ${time}.`, r.id);
+      }
+    });
+    return out.sort((a, b) => a.mins - b.mins);
+  }
+
+  renderVals() {
+    const F = window.VITAL_FIXTURE;
+    const s = this.state;
+    const refs = (s.referrals || []).map(r => ({ ...r, ...this.skin(r.status), ...this.plain(r) }));
+    /* Anything waiting on the patient comes first — a proposed time expires. */
+    const active = refs.filter(r => !['Completed', 'Declined', 'No-show', 'Consent revoked'].includes(r.status))
+      .sort((a, b) => (a.status === 'Reschedule proposed' ? -1 : 0) - (b.status === 'Reschedule proposed' ? -1 : 0))
+      .slice(0, 3)
+      .map(r => ({
+        ...r, iconEl: this.icon(r.iconName, 16),
+        hasCountdown: r.status === 'Reschedule proposed',
+        open: () => this.setState({ screen: r.status === 'Reschedule proposed' ? 'proposed' : 'detail', selected: r.id }),
+      }));
+
+    const sel = refs.find(r => r.id === s.selected)
+      || (s.screen === 'proposed' ? refs.find(r => r.status === 'Reschedule proposed') : null)
+      || refs[0];
+    let detail = { plainTrail: [] };
+    if (sel) {
+      detail = {
+        ...sel,
+        iconEl: this.icon(sel.iconName, 16),
+        rhu: F ? F.RHU : '',
+        originLine: sel.origin === 'Personal' ? 'You booked this yourself' : `Asked for by ${F ? F.RHU : ''}`,
+        slotLine: `Your time: ${sel.scheduledAt}`,
+        isProposed: sel.status === 'Reschedule proposed',
+        proposedSlot: sel.proposedSlot || '',
+        respondCountdown: sel.respondCountdown || '',
+        summary: (s.summaries || {})[sel.id] || null,
+        hasSummary: !!(s.summaries || {})[sel.id],
+        nothingToDo: ['Sent', 'Received', 'Endorsed'].includes(sel.status),
+        plainTrail: sel.trail.map(e => {
+          const p = this.plain({ ...sel, status: e.status }, true);
+          const k = this.skin(e.status);
+          return { line: p.plainLine, glyph: p.glyph, hue: k.hue, at: e.at };
+        }).reverse(),
+      };
+    }
+
+    const consents = (s.consents || []).map((c, i) => ({
+      ...c,
+      state: c.active ? 'Sharing' : 'Ended',
+      glyph: c.active ? 'shield' : 'shield_moon',
+      fill: c.active ? 'var(--status-progress-fill)' : 'var(--status-waiting-fill)',
+      ink: c.active ? 'var(--status-progress-ink)' : 'var(--status-waiting-ink)',
+      revoke: () => this.setState({ screen: 'revoke', revokeIndex: i }),
+    }));
+
+    const activeCount = consents.filter(c => c.active).length;
+    const word = ['No', 'One', 'Two', 'Three', 'Four', 'Five'][activeCount] || String(activeCount);
+    const accessLine = activeCount === 0
+      ? 'No facility can see your record right now. A new appointment will ask you to share again.'
+      : `${word} ${activeCount === 1 ? 'facility' : 'facilities'} can see parts of your record right now. You can stop sharing at any time.`;
+    const rv = (s.consents || [])[s.revokeIndex] || { facility: '', kind: '', referralId: null };
+    const screens = [['home', 'P1 Wallet home'], ['detail', 'P2 Appointment detail'], ['docs', 'P3 Documents'], ['consent', 'P4 Consent'], ['revoke', 'P5 Revoke access'], ['bookTests', 'P6 New — tests'], ['bookFacility', 'P7 New — facility'], ['booked', 'P8 Booked'], ['profile', 'P9 Profile'], ['notifications', 'P10 Notifications'], ['proposed', 'P11 Reschedule proposed']].map(([id, label]) => {
+      const on = s.screen === id;
+      return {
+        label, on,
+        bg: on ? 'var(--color-forest-ink)' : 'transparent',
+        ink: on ? 'var(--color-cream-paper)' : 'var(--color-forest-ink)',
+        border: on ? 'var(--color-forest-ink)' : 'var(--color-forest-ink)',
+        weight: on ? 600 : 400,
+        go: () => this.setState(id === 'notifications' ? { screen: id, seen: true } : { screen: id }),
+      };
+    });
+
+    const tabbar = [['home', 'Home', 'home'], ['docs', 'Documents', 'description'], ['consent', 'Access', 'shield'], ['profile', 'Details', 'person']].map(([id, label, glyph]) => {
+      const on = s.screen === id || (id === 'home' && ['detail', 'bookTests', 'bookFacility', 'booked', 'proposed'].includes(s.screen)) || (id === 'consent' && s.screen === 'revoke');
+      return {
+        label, glyph, on,
+        bg: on ? 'var(--color-keylime-wash)' : 'transparent',
+        ink: 'var(--color-forest-ink)',
+        weight: on ? 600 : 400,
+        go: () => this.setState({ screen: id }),
+      };
+    });
+
+    /* Booking flow (P6-P8). Slots are drawn from the chosen facility's own published
+       schedule (the same data L6 renders) — never from a list of VITAL's own. */
+    const b = s.booking;
+    const setBooking = patch => this.setState(st => ({ booking: { ...st.booking, ...patch } }));
+    const testList = (F ? F.TEST_META : []).map(t => {
+      const on = b.tests.includes(t.name);
+      return {
+        name: t.name, on,
+        glyph: on ? 'check_box' : 'check_box_outline_blank',
+        weight: on ? 500 : 400,
+        border: on ? 'var(--color-forest-ink)' : 'var(--color-border-input)',
+        bg: on ? 'var(--color-keylime-wash)' : 'transparent',
+        toggle: () => setBooking({
+          tests: on ? b.tests.filter(x => x !== t.name) : [...b.tests, t.name],
+          facility: null,
+        }),
+      };
+    });
+    const ranked = F ? F.rankFacilities(b.tests) : [];
+    /* A row books when at least one chosen test is bookable here. A referral requirement
+       only disables the row when it is what brings that count to zero. */
+    const facilityCard = f => ({
+      name: f.name,
+      where: `${f.municipality} · ${f.travel}`,
+      partner: f.partner,
+      on: b.facility === f.name,
+      blocked: f.blocked,
+      hasReferralLine: f.referralOnly.length > 0,
+      referralLine: f.referralOnly.length
+        ? `Needs a referral from your health centre for ${f.referralOnly.join(', ')}`
+        : '',
+      hasMissingLine: f.missing.length > 0,
+      missingLine: f.missing.length ? `Does not offer ${f.missing.join(', ')}` : '',
+      booksLine: f.blocked
+        ? 'Nothing you chose can be booked here without a referral'
+        : `Books ${f.bookable.length} of ${b.tests.length} ${b.tests.length === 1 ? 'test' : 'tests'}`,
+      border: f.blocked ? 'var(--color-border-mist)' : b.facility === f.name ? 'var(--color-forest-ink)' : 'var(--color-border-strong)',
+      bg: f.blocked ? 'var(--color-cream-paper)' : b.facility === f.name ? 'var(--color-keylime-wash)' : 'var(--color-cream-paper)',
+      ink: f.blocked ? 'var(--color-charcoal-muted)' : 'var(--color-charcoal)',
+      cursor: f.blocked ? 'not-allowed' : 'pointer',
+      pick: () => { if (!f.blocked) setBooking({ facility: f.name, slot: null }); },
+    });
+    const blockedFacilities = ranked.filter(f => f.blocked);
+    const blockedTests = [...new Set(blockedFacilities.flatMap(f => f.referralOnly))];
+    const slotList = [];
+    const published = (F && b.facility) ? F.slotsFor(b.facility) : [];
+    published.forEach(d => d.times.forEach(t => {
+      const label = `${d.day} · ${t}`;
+      slotList.push({
+        label, on: b.slot === label,
+        border: b.slot === label ? 'var(--color-forest-ink)' : 'var(--color-border-input)',
+        bg: b.slot === label ? 'var(--color-forest-ink)' : 'transparent',
+        ink: b.slot === label ? 'var(--color-cream-paper)' : 'var(--color-forest-ink)',
+        pick: () => setBooking({ slot: label }),
+      });
+    }));
+    const chosenRank = ranked.find(f => f.name === b.facility);
+    const slotOnSchedule = slotList.some(sl => sl.label === b.slot);
+    const canBook = !!(b.facility && slotOnSchedule && b.tests.length && !(chosenRank && chosenRank.blocked));
+
+    /* Every chosen test is accounted for: included, or excluded with its own reason.
+       The two exclusion reasons stay apart — one means go elsewhere, the other means
+       get a referral and come back. */
+    const summaryFor = (facilityName, tests) => {
+      const f = (F ? F.FACILITIES : []).find(x => x.name === facilityName);
+      if (!f || !tests.length) return null;
+      const included = tests.filter(x => f.coverage.includes(x) && !(f.referralTests || []).includes(x));
+      const notOffered = tests.filter(x => !f.coverage.includes(x));
+      const referral = tests.filter(x => f.coverage.includes(x) && (f.referralTests || []).includes(x));
+      return {
+        headline: `Booking ${included.length} of ${tests.length} ${tests.length === 1 ? 'test' : 'tests'}`,
+        included: included.join(', '),
+        notOffered: notOffered.join(', '),
+        referral: referral.join(', '),
+        hasNotOffered: notOffered.length > 0,
+        hasReferral: referral.length > 0,
+        hasExcluded: notOffered.length + referral.length > 0,
+        separateLine: notOffered.length + referral.length > 1
+          ? "You'll need separate appointments for these."
+          : "You'll need a separate appointment for this.",
+      };
+    };
+    const bookedSummary = summaryFor(b.facility, b.tests);
+    const referralAdvisoryTests = b.tests.filter(x => (F ? F.TEST_META : []).some(m => m.name === x && m.needsReferral));
+    const canGoFacility = b.tests.length > 0;
+    const chosen = ranked.find(f => f.name === b.facility);
+
+    /* Notifications (P10). Unread = anything from the last 24 hours, until the screen is opened. */
+    const notes = this.notify(refs);
+    const unreadCount = s.seen ? 0 : notes.filter(n => n.mins <= 1440).length;
+    const notifications = notes.map(n => ({
+      ...n,
+      ago: this.ago(n.mins),
+      unread: !s.seen && n.mins <= 1440,
+      weight: !s.seen && n.mins <= 1440 ? 500 : 400,
+      open: () => this.setState({ screen: 'detail', selected: n.id }),
+    }));
+
+    return {
+      screens, tabbar, detail, consents,
+      notifications, unreadCount,
+      hasUnread: unreadCount > 0,
+      bellLabel: unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications',
+      bellBg: s.screen === 'notifications' ? 'var(--color-keylime-wash)' : 'transparent',
+      isNotifications: s.screen === 'notifications',
+      goNotifications: () => this.setState({ screen: 'notifications', seen: true }),
+      testList, slotList,
+      hasSlots: slotList.length > 0,
+      slotHeading: b.facility ? `Times published by ${b.facility}` : 'Pick a time',
+      noSlotsLine: b.facility
+        ? 'This facility has not published any times for the coming days.'
+        : 'Choose a facility above to see the times it has published.',
+      showReferralAdvisory: referralAdvisoryTests.length > 0,
+      referralAdvisory: "Some facilities require a referral from your health centre for this test. You'll see which ones when you choose a facility.",
+      summary: bookedSummary,
+      hasSummary: !!bookedSummary,
+      noFullMatch: b.tests.length > 0 && ranked.filter(f => f.full).length === 0,
+      hasFullMatch: ranked.filter(f => f.full).length > 0,
+      noSlots: slotList.length === 0,
+      fullMatchEmptyLine: 'No facility near you offers all your selected tests. You may need more than one appointment.',
+      hasBlocked: blockedFacilities.length > 0,
+      blockedHeadline: blockedTests.length
+        ? `${blockedTests.join(' and ')} needs a referral at some facilities`
+        : '',
+      blockedBody: 'The facilities marked above only accept that test when a health centre books it. Ask Loon Rural Health Unit to refer you, or choose a facility that accepts it directly.',
+      pickedLine: b.tests.length ? b.tests.join(' · ') : 'No tests chosen yet',
+      fullMatch: ranked.filter(f => f.full).map(facilityCard),
+      partialMatch: ranked.filter(f => !f.full).map(facilityCard),
+      nextTestsBg: canGoFacility ? 'var(--color-forest-ink)' : 'var(--color-border-mist)',
+      nextTestsInk: canGoFacility ? 'var(--color-cream-paper)' : 'var(--color-disabled-ink)',
+      nextTestsBorder: canGoFacility ? 'var(--color-forest-ink)' : 'var(--color-border-mist)',
+      nextTestsCursor: canGoFacility ? 'pointer' : 'not-allowed',
+      bookBg: canBook ? 'var(--color-forest-ink)' : 'var(--color-border-mist)',
+      bookInk: canBook ? 'var(--color-cream-paper)' : 'var(--color-disabled-ink)',
+      bookBorder: canBook ? 'var(--color-forest-ink)' : 'var(--color-border-mist)',
+      bookCursor: canBook ? 'pointer' : 'not-allowed',
+      booked: {
+        facility: b.facility || '',
+        where: chosen ? `${chosen.municipality} · ${chosen.travel}` : '',
+        tests: b.tests.join(' · '),
+        slot: b.slot || '',
+        id: b.id,
+      },
+      referredBy: b.referredBy,
+      setReferredBy: e => setBooking({ referredBy: e.target.value }),
+      profile: F ? F.PROFILE : [],
+      goBookTests: () => this.setState({ screen: 'bookTests' }),
+      goBookFacility: () => { if (canGoFacility) this.setState({ screen: 'bookFacility' }); },
+      book: () => {
+        if (!canBook) return;
+        /* The booked appointment joins the wallet list so P1 and P2 show it, carrying the
+           summary of what was and was not included. */
+        const chosenFacility = (F ? F.FACILITIES : []).find(x => x.name === b.facility);
+        const included = b.tests.filter(x => chosenFacility.coverage.includes(x) && !(chosenFacility.referralTests || []).includes(x));
+        const row = {
+          ...(F ? F.APPOINTMENTS[0] : {}),
+          id: b.id, status: 'Booked', origin: 'Personal',
+          patient: F ? F.WALLET_PATIENT.name : '', patientId: F ? F.WALLET_PATIENT.id : '',
+          lab: b.facility, labStaff: F ? F.LAB_STAFF[b.facility] : '',
+          tests: included, test: included.join(', '),
+          scheduledAt: b.slot, note: 'Booked directly from the health wallet.',
+          referredBy: b.referredBy || null, result: null, declineReason: null,
+          proposedSlot: null, proposedAt: null, respondMinsLeft: null, respondCountdown: null,
+          updated: F ? F.stamp(0) : '', created: F ? F.stamp(0) : '',
+          trail: F ? F.trailFor('Booked', b.facility, F.WALLET_PATIENT.name, 2, 'Personal') : [],
+        };
+        this.setState(st => ({
+          screen: 'booked',
+          referrals: [row, ...(st.referrals || []).filter(r => r.id !== b.id)],
+          summaries: { ...(st.summaries || {}), [b.id]: bookedSummary },
+        }));
+      },
+      isProposed: s.screen === 'proposed',
+      goProposed: () => this.setState({ screen: 'proposed', selected: sel ? sel.id : null }),
+      /* P11 can be reached before anything is selected, so both actions work off the
+         appointment the screen is actually showing. */
+      acceptProposed: () => {
+        if (!sel) return;
+        this.setState(st => ({
+          screen: 'detail',
+          selected: sel.id,
+          referrals: (st.referrals || []).map(r => r.id === sel.id
+            ? { ...r, status: 'Accepted', scheduledAt: r.proposedSlot, updated: F.stamp(0),
+                proposedSlot: null, proposedAt: null, respondMinsLeft: null, respondCountdown: null,
+                trail: [...r.trail, { status: 'Accepted', at: F.stamp(0), _m: 0, actor: F.WALLET_PATIENT.name.split(', ').reverse().join(' '), facility: 'Health wallet' }] }
+            : r),
+        }));
+      },
+      rebookElsewhere: () => {
+        if (!sel) return;
+        this.setState(st => ({
+          screen: 'bookFacility',
+          selected: sel.id,
+          booking: { ...st.booking, tests: [...sel.tests], facility: null, slot: null },
+        }));
+      },
+      isBookTests: s.screen === 'bookTests', isBookFacility: s.screen === 'bookFacility',
+      isBooked: s.screen === 'booked', isProfile: s.screen === 'profile',
+      bookedSlotLine: b.slot || '',
+      accessLine: accessLine,
+      patientName: F ? F.WALLET_PATIENT.name.split(', ').reverse().join(' ') : '',
+      patientId: F ? F.WALLET_PATIENT.id : '',
+      activeAppointments: active,
+      recentDocs: (F ? F.DOCUMENTS : []).filter(d => !d.voided).slice(0, 2),
+      documents: (F ? F.DOCUMENTS : []).map(d => ({
+        ...d,
+        glyph: d.voided ? 'report' : 'description',
+        hue: d.voided ? 'var(--color-clay-alert)' : 'var(--color-charcoal)',
+      })),
+      isHome: s.screen === 'home', isDetail: s.screen === 'detail', isDocs: s.screen === 'docs',
+      isConsent: s.screen === 'consent', isRevoke: s.screen === 'revoke',
+      goHome: () => this.setState({ screen: 'home' }),
+      goDocs: () => this.setState({ screen: 'docs' }),
+      goConsent: () => this.setState({ screen: 'consent' }),
+      revoke: {
+        facility: rv.facility,
+        consequence: rv.kind === 'Referring provider'
+          ? 'They are the health centre that refers you. They will not be able to send new appointments or read results for you until you share again.'
+          : 'The appointment they are working on will be closed. If you still need the test, your health centre will have to send a new appointment.',
+      },
+      confirmRevoke: () => this.setState(st => ({
+        screen: 'consent',
+        consents: st.consents.map((c, i) => i === st.revokeIndex ? { ...c, active: false, until: 'Stopped 15 Sep' } : c),
+        referrals: st.referrals.map(r => (rv.referralId && rv.referralId === r.id)
+          ? { ...r, status: 'Consent revoked', updated: F.stamp(0), trail: [...r.trail, { status: 'Consent revoked', at: F.stamp(0), actor: F.WALLET_PATIENT.name.split(', ').reverse().join(' '), facility: 'Health wallet' }] }
+          : r),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

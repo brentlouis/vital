@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<![CDATA[<helmet>
+  <style>
+/* VITAL webfonts.
+   Faire Octave (display serif) and Suisse Intl (UI sans) are commercially
+   licensed and are NOT shipped here. Per DESIGN.md §2.1 the substitutes are
+   authoritative for all prototyping and pilot work:
+     Faire Octave -> Cormorant Garamond 300
+     Suisse Intl  -> Inter 400/500/600
+   Both are served from Google Fonts. If licensed binaries become available,
+   drop them in assets/fonts/ and replace the @import below with @font-face
+   rules pointing at them; keep the family names in tokens/typography.css. */
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@400;500;600&display=swap");
+
+/* VITAL color — DESIGN.md §1. Light theme only; dark mode is out of scope. */
+:root {
+  /* Foundation */
+  --color-forest-ink: #0f3e17;
+  --color-forest-shadow: #0c2f10;
+  --color-sage-mist: #b1dbb8;
+  --color-keylime-wash: #e1f4df;
+  --color-mint-veil: #cfe7d3;
+  --color-slate-hush: #b6ced5;
+  --color-cream-paper: #fffefc;
+  --color-charcoal: #222222;
+
+  /* Neutrals */
+  --color-charcoal-muted: #6b6b6b;
+  --color-border-strong: #c2bfb6;
+  --color-border-input: #8f8c84;
+  --color-disabled-ink: #8f8c84;
+  --color-border-mist: #efeeeb; /* decorative hairlines only — 1.15:1 */
+
+  /* Semantic status — locked meanings, never decorative */
+  --color-clay-alert: #8c2f2a;
+  --color-clay-wash: #f5e3e1;
+  --color-amber-hold: #8a5a12;
+  --color-amber-wash: #f7edd9;
+
+  --color-focus: #0f3e17;
+  --scrim: rgba(15, 62, 23, 0.32);
+
+  /* Semantic aliases */
+  --text-primary: var(--color-charcoal);
+  --text-heading: var(--color-forest-ink);
+  --text-muted: var(--color-charcoal-muted);
+  --text-inverse: var(--color-cream-paper);
+  --text-disabled: var(--color-disabled-ink);
+  --text-link: var(--color-forest-ink);
+
+  --surface-page: var(--color-cream-paper);
+  --surface-card: var(--color-cream-paper);
+  --surface-tint-1: var(--color-keylime-wash);
+  --surface-tint-2: var(--color-mint-veil);
+  --surface-tint-3: var(--color-sage-mist);
+  --surface-counter: var(--color-slate-hush);
+  --surface-inverse: var(--color-forest-ink);
+
+  --border-divider: var(--color-border-strong);
+  --border-control: var(--color-border-input);
+  --border-hairline: var(--color-border-mist);
+
+  --action-primary: var(--color-forest-ink);
+  --action-primary-hover: var(--color-forest-shadow);
+  --action-destructive: var(--color-clay-alert);
+
+  /* Status groups — DESIGN.md §6.1 */
+  --status-waiting-fill: var(--color-border-mist);
+  --status-waiting-ink: var(--color-charcoal-muted);
+  --status-progress-fill: var(--color-slate-hush);
+  --status-progress-ink: var(--color-forest-ink);
+  --status-done-fill: var(--color-forest-ink);
+  --status-done-ink: var(--color-cream-paper);
+  --status-fail-fill: var(--color-clay-wash);
+  --status-fail-ink: var(--color-clay-alert);
+  --status-attention-fill: var(--color-amber-wash);
+  --status-attention-ink: var(--color-amber-hold);
+}
+
+/* VITAL typography — DESIGN.md §2. Serif is wallet + deck only, never portals. */
+:root {
+  --font-serif-display: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-serif-display);
+
+  --text-caption: 12px;      --leading-caption: 1.5;
+  --text-body-sm: 14px;      --leading-body-sm: 1.5;
+  --text-body: 16px;         --leading-body: 1.5;
+  --text-subheading: 18px;   --leading-subheading: 1.4;
+  --text-heading-sm: 20px;   --leading-heading-sm: 1.35;
+  --text-heading-md: 24px;   --leading-heading-md: 1.3;
+  --text-heading-lg: 32px;   --leading-heading-lg: 1.2;
+  --text-display: 48px;      --leading-display: 1.1;
+
+  --tracking-heading: -0.01em;
+  --tracking-heading-lg: -0.02em;
+  --tracking-display: -0.03em;
+  --tracking-column-header: 0.06em;
+
+  --font-weight-light: 300;   /* serif only */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Semantic aliases */
+  --type-portal-body: var(--text-body-sm);  /* 14px is the portal default */
+  --type-wallet-body: var(--text-body);     /* 16px is the wallet default */
+}
+
+/* Every timestamp, referral ID, patient ID and count — DESIGN.md §2.4 */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* The single permitted uppercase — table column headers, DESIGN.md §2.5 */
+.column-header {
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-column-header);
+  text-transform: uppercase;
+  color: var(--color-charcoal-muted);
+}
+
+/* VITAL spacing, shape, density and targets — DESIGN.md §3. */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-badge: 999px;
+  --radius-icon: 4px;
+
+  /* Comfortable — wallet, deck */
+  --card-padding-comfortable: 24px;
+  --row-height-comfortable: 56px;
+  --gap-comfortable: 16px;
+  --section-gap-comfortable: 48px;
+
+  /* Compact — RHU and laboratory portals */
+  --card-padding-compact: 16px;
+  --row-height-compact: 40px;
+  --gap-compact: 12px;
+  --section-gap-compact: 24px;
+
+  /* Targets */
+  --target-touch: 48px;    /* wallet, mobile */
+  --target-control: 40px;  /* portal controls */
+  --target-icon: 32px;     /* portal icon-only buttons */
+
+  /* Layout */
+  --gutter-portal: 24px;
+  --gutter-wallet: 16px;
+  --max-width-marketing: 1200px;
+}
+
+/* Density scopes — set on a surface root, components read the resolved vars. */
+[data-density="comfortable"] {
+  --card-padding: var(--card-padding-comfortable);
+  --row-height: var(--row-height-comfortable);
+  --gap: var(--gap-comfortable);
+  --section-gap: var(--section-gap-comfortable);
+}
+[data-density="compact"] {
+  --card-padding: var(--card-padding-compact);
+  --row-height: var(--row-height-compact);
+  --gap: var(--gap-compact);
+  --section-gap: var(--section-gap-compact);
+}
+
+/* VITAL elevation — DESIGN.md §4. Default is shadowless; depth is tinted
+   surface layering (cream -> keylime -> mint -> sage -> slate).
+   Shadows exist for exactly three surfaces: dialog, bottom sheet / dropdown,
+   toast. Nothing else in the system casts one. */
+:root {
+  --shadow-none: none;
+  --shadow-floating: 0 4px 16px rgba(12, 47, 16, 0.12);
+  --scrim-modal: rgba(15, 62, 23, 0.32);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+/* Minimal, opinion-free base so consumers inherit the brand defaults. */
+body {
+  margin: 0;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, h5, h6 { color: var(--text-heading); font-weight: var(--font-weight-semibold); margin: 0; }
+a { color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--action-primary-hover); }
+:focus-visible { outline: var(--focus-ring-width) solid var(--color-focus); outline-offset: var(--focus-ring-offset); }
+  </style>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.js"></script>
+  <script>
+/* VITAL seed data — synthetic. Invented people, real Bohol geography.
+   v0.2: the tracked object is an Appointment (origin + scheduled slot). */
+(function () {
+  const RHU = 'Loon Rural Health Unit';
+  const RHU_STAFF = 'J. Bacarro';
+  const LAB_STAFF = {
+    'Tagbilaran Diagnostic Center': 'R. Piezas',
+    'Dauis Bayview Laboratory': 'C. Olaivar',
+    'Panglao Island Medical Lab': 'M. Sumampong',
+    'Loon Heritage Clinical Lab': 'E. Bughao',
+    'Baclayon Parish Diagnostics': 'N. Talisic',
+    'Loboc Riverside Laboratory': 'V. Auxtero',
+  };
+
+  const LABS = Object.keys(LAB_STAFF);
+
+  /* Whether a test typically needs a provider decision. The binding rule is per facility
+     (referralTests below), declared by the facility at registration. */
+  const TEST_META = [
+    { name: 'CBC', long: 'Complete blood count', needsReferral: false },
+    { name: 'Fasting blood sugar', long: 'Fasting blood sugar', needsReferral: false },
+    { name: 'Urinalysis', long: 'Urinalysis', needsReferral: false },
+    { name: 'Chest X-ray', long: 'Chest X-ray', needsReferral: true },
+    { name: 'Rabies vaccination', long: 'Rabies vaccination', needsReferral: false },
+    { name: 'Lipid profile', long: 'Lipid profile', needsReferral: false },
+    { name: 'Sputum smear', long: 'Sputum smear', needsReferral: true },
+    { name: 'Pregnancy test', long: 'Pregnancy test', needsReferral: false },
+  ];
+  const TESTS = TEST_META.map(t => t.name);
+
+  /* Capability flags decide behaviour. Type is a display and licensing label only, and no
+     longer selects a portal: a clinic may refer out, receive, or both. */
+  const CAPABILITIES = {
+    'Loon Rural Health Unit':       { type: 'RHU / health centre',   canRefer: true,  canReceive: false },
+    'Tagbilaran Diagnostic Center': { type: 'Clinic',                canRefer: true,  canReceive: true  },
+    'Dauis Bayview Laboratory':     { type: 'Standalone laboratory', canRefer: false, canReceive: true  },
+    'Baclayon Parish Diagnostics':  { type: 'Clinic',                canRefer: false, canReceive: true  },
+    'Panglao Island Medical Lab':   { type: 'Standalone laboratory', canRefer: false, canReceive: true  },
+    'Loon Heritage Clinical Lab':   { type: 'Standalone laboratory', canRefer: false, canReceive: true  },
+    'Loboc Riverside Laboratory':   { type: 'Standalone laboratory', canRefer: false, canReceive: true  },
+  };
+  function capabilitiesOf(name) {
+    return CAPABILITIES[name] || { type: 'Standalone laboratory', canRefer: false, canReceive: true };
+  }
+
+  /* Test coverage per facility, plus disclosed subscription tier (brief §3). */
+  const FACILITIES = [
+    { name: 'Tagbilaran Diagnostic Center', municipality: 'Tagbilaran', travel: '35 min by van', partner: true,
+      coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Chest X-ray', 'Lipid profile', 'Sputum smear', 'Pregnancy test'],
+      referralTests: ['Chest X-ray', 'Sputum smear'] },
+    { name: 'Dauis Bayview Laboratory', municipality: 'Dauis', travel: '40 min by van', partner: false,
+      coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Chest X-ray', 'Lipid profile'],
+      referralTests: ['Chest X-ray'] },
+    { name: 'Baclayon Parish Diagnostics', municipality: 'Baclayon', travel: '50 min by van', partner: false,
+      coverage: ['CBC', 'Urinalysis', 'Chest X-ray', 'Sputum smear'],
+      referralTests: ['Sputum smear'] },
+    { name: 'Panglao Island Medical Lab', municipality: 'Panglao', travel: '1 hr 5 min by van', partner: true,
+      coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Rabies vaccination', 'Pregnancy test'],
+      referralTests: [] },
+    { name: 'Loon Heritage Clinical Lab', municipality: 'Loon', travel: '10 min on foot', partner: false,
+      coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Pregnancy test'],
+      referralTests: [] },
+    { name: 'Loboc Riverside Laboratory', municipality: 'Loboc', travel: '1 hr 20 min by van', partner: true,
+      coverage: ['Fasting blood sugar', 'Urinalysis', 'Rabies vaccination'],
+      referralTests: [] },
+  ];
+
+  /* Each receiving facility publishes its own day schedule. This is the single source of slot
+     data: L6 renders it, and P7 and R2 may only offer slots drawn from it. Still static —
+     no capacity engine, no conflict resolution (brief §1.3). */
+  const SCHEDULE = {
+    'Tagbilaran Diagnostic Center': [
+      { day: 'Wed 16 Sep', times: ['07:30', '08:00', '09:30', '13:00', '14:30'] },
+      { day: 'Thu 17 Sep', times: ['07:30', '10:00', '11:00', '15:00'] },
+      { day: 'Fri 18 Sep', times: ['08:30', '09:00', '13:30'] },
+    ],
+    'Dauis Bayview Laboratory': [
+      { day: 'Wed 16 Sep', times: ['08:00', '09:00', '10:30'] },
+      { day: 'Thu 17 Sep', times: ['08:00', '13:30', '14:00'] },
+      { day: 'Fri 18 Sep', times: ['09:30', '11:00'] },
+    ],
+    'Baclayon Parish Diagnostics': [
+      { day: 'Thu 17 Sep', times: ['09:00', '10:00'] },
+      { day: 'Fri 18 Sep', times: ['08:00', '08:30', '13:00'] },
+    ],
+    'Panglao Island Medical Lab': [
+      { day: 'Wed 16 Sep', times: ['08:30', '11:30'] },
+      { day: 'Thu 17 Sep', times: ['07:00', '09:30', '14:00', '15:30'] },
+      { day: 'Fri 18 Sep', times: ['10:00', '13:00'] },
+    ],
+    'Loon Heritage Clinical Lab': [
+      { day: 'Wed 16 Sep', times: ['07:00', '07:30', '08:00', '10:00'] },
+      { day: 'Thu 17 Sep', times: ['07:00', '08:30', '13:00'] },
+      { day: 'Fri 18 Sep', times: ['07:30', '09:00', '14:00'] },
+    ],
+    'Loboc Riverside Laboratory': [
+      { day: 'Thu 17 Sep', times: ['09:00', '13:30'] },
+      { day: 'Fri 18 Sep', times: ['08:00', '10:30', '15:00'] },
+    ],
+  };
+  function slotsFor(facility) { return SCHEDULE[facility] || []; }
+  /* Slot labels on an appointment read "16 Sep · 08:00"; the schedule carries the weekday. */
+  function slotLabels(facility) {
+    const out = [];
+    slotsFor(facility).forEach(d => d.times.forEach(t => out.push(d.day.replace(/^\S+ /, '') + ' · ' + t)));
+    return out;
+  }
+  /* The alternative a facility offers when it proposes a new time — its own next published slot. */
+  function proposedSlotFor(facility, currentSlot) {
+    const flat = slotLabels(facility);
+    return flat.find(s => s !== currentSlot) || flat[0] || '';
+  }
+  /* A patient has 48 hours to answer a proposed time before it returns to the facility. */
+  const RESPOND_WINDOW = 2880;
+  function countdown(minsLeft) {
+    if (minsLeft <= 0) return 'No response — returned to the facility';
+    if (minsLeft < 60) return minsLeft + ' minutes left to respond';
+    const h = Math.round(minsLeft / 60);
+    return h + (h === 1 ? ' hour left to respond' : ' hours left to respond');
+  }
+
+  const REFERRED_PATH = ['Created', 'Sent', 'Received', 'Accepted', 'Patient arrived', 'Endorsed', 'Completed'];
+  const PERSONAL_PATH = ['Booked', 'Received', 'Accepted', 'Patient arrived', 'Endorsed', 'Completed'];
+  const ACTOR_OF = {
+    Created: 'rhu', Sent: 'rhu', Booked: 'patient', Received: 'lab', Accepted: 'lab',
+    Declined: 'lab', 'Patient arrived': 'lab', 'No-show': 'lab', Endorsed: 'lab',
+    'Result voided': 'lab', 'Consent revoked': 'patient', 'Reschedule proposed': 'lab',
+  };
+
+  /* Overdue is derived from the row, never written to the trail (brief §2.2). */
+  function trailFor(status, lab, patient, startMinutes, origin, referrer) {
+    const FROM = referrer || RHU;
+    const FROM_STAFF = referrer ? LAB_STAFF[referrer] : RHU_STAFF;
+    const PATH = origin === 'Personal' ? PERSONAL_PATH : REFERRED_PATH;
+    const head = PATH.slice(0, PATH.indexOf('Received'));
+    let chain;
+    if (status === 'Declined') chain = head.concat(['Received', 'Declined']);
+    else if (status === 'No-show') chain = head.concat(['Received', 'Accepted', 'No-show']);
+    else if (status === 'Overdue') chain = head.concat(['Received', 'Accepted']);
+    else if (status === 'Reschedule proposed') chain = head.concat(['Received', 'Reschedule proposed']);
+    else if (status === 'Consent revoked') chain = head.concat(['Received', 'Consent revoked']);
+    else if (status === 'Result voided') chain = head.concat(['Received', 'Accepted', 'Patient arrived', 'Endorsed', 'Result voided']);
+    else chain = PATH.slice(0, PATH.indexOf(status) + 1);
+    const step = startMinutes / (chain.length + 1);
+    return chain.map((s, i) => {
+      const t = Math.round(startMinutes - i * step);
+      /* Completed is the RHU's acknowledgement when referred, the patient's when personal. */
+      const who = s === 'Completed' ? (origin === 'Personal' ? 'patient' : 'rhu') : ACTOR_OF[s];
+      return {
+        status: s,
+        _m: t,
+        at: stamp(t),
+        actor: who === 'rhu' ? FROM_STAFF : who === 'lab' ? LAB_STAFF[lab] : patient.split(', ').reverse().join(' '),
+        facility: who === 'rhu' ? FROM : who === 'lab' ? lab : 'Health wallet',
+      };
+    });
+  }
+
+  /* Minutes before 15 Sep 2026 09:41 → "13 Sep · 14:29". Negative minutes are in the future. */
+  function stamp(minutesBefore) {
+    const base = new Date(2026, 8, 15, 9, 41);
+    const d = new Date(base.getTime() - minutesBefore * 60000);
+    const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getDate()) + ' ' + mon + ' · ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  /* Booked slots sit on the half hour, so they are rounded off the running clock. */
+  function slotDate(minutesBefore) {
+    const base = new Date(2026, 8, 15, 9, 41);
+    const d = new Date(base.getTime() - minutesBefore * 60000);
+    d.setMinutes(d.getMinutes() - (d.getMinutes() % 30), 0, 0);
+    /* Laboratories open 07:00-16:00, so slots are folded into opening hours. */
+    const h = d.getHours();
+    if (h < 7 || h > 16) d.setHours(7 + (h % 10));
+    return d;
+  }
+  function clock(minutesBefore) {
+    const d = slotDate(minutesBefore);
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function slotStamp(minutesBefore) {
+    const d = slotDate(minutesBefore);
+    const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getDate()) + ' ' + mon + ' · ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  const PEOPLE = [
+    ['Abdon, Maricel', 'PH-4409-1182', 34, 'F', 'Loon'],
+    ['Bagatsing, Lorenzo', 'PH-3318-0924', 61, 'M', 'Tagbilaran'],
+    ['Cadapan, Reynaldo', 'PH-7712-4408', 58, 'M', 'Baclayon'],
+    ['Lumandas, Imelda', 'PH-1180-6631', 47, 'F', 'Dauis'],
+    ['Espuerta, Nolan', 'PH-6620-3390', 29, 'M', 'Panglao'],
+    ['Fuentebella, Rosalie', 'PH-2204-7751', 66, 'F', 'Loboc'],
+    ['Hinlo, Teofilo', 'PH-9931-2205', 72, 'M', 'Loon'],
+    ['Inting, Marivic', 'PH-5540-8817', 41, 'F', 'Tagbilaran'],
+    ['Jamisola, Ariel', 'PH-8812-0031', 36, 'M', 'Panglao'],
+    ['Kabiling, Perla', 'PH-3390-6614', 55, 'F', 'Baclayon'],
+    ['Labunog, Efren', 'PH-7743-2298', 63, 'M', 'Loboc'],
+    ['Magallanes, Cristina', 'PH-1129-5583', 38, 'F', 'Dauis'],
+    ['Nazareno, Bienvenido', 'PH-4471-9920', 70, 'M', 'Loon'],
+    ['Oclarit, Jasmin', 'PH-6638-1174', 26, 'F', 'Tagbilaran'],
+    ['Pagulayan, Rodel', 'PH-2285-4406', 49, 'M', 'Panglao'],
+    ['Quirante, Lorna', 'PH-9903-7718', 52, 'F', 'Loon'],
+    ['Racoma, Alfredo', 'PH-5517-3384', 68, 'M', 'Baclayon'],
+    ['Sarabia, Nenita', 'PH-1174-8829', 59, 'F', 'Loboc'],
+    ['Tirambulo, Glenda', 'PH-7796-2241', 44, 'F', 'Dauis'],
+    ['Umbao, Fidel', 'PH-3342-6650', 31, 'M', 'Loon'],
+    ['Valeroso, Marissa', 'PH-8829-1107', 37, 'F', 'Tagbilaran'],
+    ['Wenceslao, Dante', 'PH-4408-5573', 64, 'M', 'Panglao'],
+    ['Ybanez, Corazon', 'PH-6651-9938', 74, 'F', 'Baclayon'],
+    ['Zafra, Melchor', 'PH-2217-4485', 45, 'M', 'Loboc'],
+    ['Amodia, Felisa', 'PH-9938-3306', 57, 'F', 'Dauis'],
+    ['Boteros, Ruben', 'PH-5573-1129', 33, 'M', 'Loon'],
+    ['Casiple, Elvira', 'PH-1107-6642', 48, 'F', 'Tagbilaran'],
+    ['Dumaluan, Arnel', 'PH-7718-2295', 62, 'M', 'Panglao'],
+    ['Empuerto, Luzviminda', 'PH-3384-8816', 51, 'F', 'Baclayon'],
+    ['Garcia-Amper, Dina', 'PH-6614-4471', 39, 'F', 'Loboc'],
+  ].map(([name, id, age, sex, municipality]) => ({ name, id, age, sex, municipality }));
+
+  /* [patientIndex, status, labIndex, [testIndexes], minutesSinceStart, scheduledMinutesBefore, origin, note, referredBy, referrer]
+     Negative scheduledMinutesBefore is a slot still in the future. referrer names the
+     originating facility when it is not the health centre — a clinic with can_refer set. */
+  const SEED = [
+    [3,  'Overdue',          0, [3],    7400, 5880,  'Referred', 'Persistent cough, three weeks. Rule out pulmonary tuberculosis.', null],
+    [1,  'Declined',         1, [1],    36,   -1080, 'Referred', 'Polyuria and weight loss. Baseline glucose needed.', null],
+    [0,  'Patient arrived',  2, [0],    43,   20,    'Referred', 'Pallor and fatigue since July. Anaemia workup.', null],
+    [2,  'Endorsed',         3, [2],    60,   180,   'Referred', 'Dysuria, two days. Suspected urinary tract infection.', null],
+    [4,  'Accepted',         4, [0],    71,   -1380, 'Referred', 'Pre-employment screening, barangay requirement.', null],
+    [5,  'Overdue',          5, [1],    6200, 4560,  'Referred', 'Known diabetic, no reading since March.', null],
+    [6,  'Sent',             0, [3],    106,  -1500, 'Referred', 'Shortness of breath on exertion.', null],
+    [7,  'Created',          1, [2],    117,  -2940, 'Referred', 'Recurrent flank pain.', null],
+    [8,  'Consent revoked',  2, [0],    970,  -420,  'Referred', 'Routine screening.', null],
+    [9,  'Completed',        3, [1],    1003, 660,   'Referred', 'Gestational diabetes screening.', null],
+    [10, 'Received',         4, [2],    1021, -1020, 'Referred', 'Follow-up after antibiotic course.', null],
+    [11, 'Accepted',         5, [3],    1047, -1440, 'Referred', 'Chest pain, atypical. Imaging requested.', null],
+    [12, 'Endorsed',         0, [0],    1074, 720,   'Referred', 'Pre-operative clearance.', null],
+    [13, 'Declined',         1, [3],    1101, -960,  'Referred', 'Cough with fever. Referring for plain film.', null],
+    [14, 'Completed',        2, [2],    1129, 840,   'Referred', 'Haematuria on urine dipstick.', null],
+    [15, 'Booked',           3, [4],    240,  -1260, 'Personal', 'Dog bite on the left calf, two days ago.', 'Dr. Ofelia Carcallas, Loon district clinic'],
+    [16, 'Patient arrived',  4, [1],    1182, 60,    'Referred', 'Diabetic, quarterly monitoring.', null],
+    [17, 'No-show',          5, [2],    5300, 4200,  'Referred', 'Suspected recurrent infection.', null],
+    [18, 'Received',         0, [1, 5], 1253, -900,  'Personal', 'Annual check, no provider decision needed.', null],
+    [19, 'Completed',        1, [0],    1324, 960,   'Referred', 'Fatigue, rule out anaemia.', null],
+    [20, 'Accepted',         2, [3],    1359, -1320, 'Referred', 'Pneumonia follow-up imaging.', null],
+    [21, 'Result voided',    3, [2],    1397, 900,   'Referred', 'Dysuria with frequency.', null],
+    [22, 'Endorsed',         4, [0],    1430, 1020,  'Referred', 'Pre-transfusion baseline.', null],
+    [23, 'Consent revoked',  5, [1],    1709, -480,  'Referred', 'Routine glucose check.', null],
+    [24, 'Completed',        0, [7],    1746, 1140,  'Personal', 'Booked directly from the health wallet.', null],
+    [25, 'Received',         1, [3],    1783, -840,  'Referred', 'Occupational chest screening.', null],
+    [26, 'Booked',           2, [0],    300,  -1200, 'Personal', 'Routine blood count before a job application.', 'Loon Rural Health Unit'],
+    [27, 'Patient arrived',  3, [1],    1872, 90,    'Referred', 'Diabetic foot ulcer, baseline glucose.', null],
+    [28, 'Sent',             4, [6],    1915, -2880, 'Referred', 'Cough and night sweats.', null],
+    [29, 'Accepted',         5, [2],    1963, -1560, 'Referred', 'Suprapubic pain.', null],
+    [0,  'Reschedule proposed', 0, [0, 5], 120,  -2400, 'Personal', 'Booked directly from the health wallet.', null],
+    [2,  'Reschedule proposed', 1, [1],    210,  -1740, 'Referred', 'Known diabetic, quarterly monitoring.', null],
+    /* Referred out by Tagbilaran Diagnostic Center — a clinic that both refers and receives. */
+    [7,  'Sent',              1, [1],    150,  -1320, 'Referred', 'Fasting glucose. We do not run this panel.', null, 'Tagbilaran Diagnostic Center'],
+    [13, 'Endorsed',          4, [4],    400,  -900,  'Referred', 'Rabies vaccination, not stocked here.', null, 'Tagbilaran Diagnostic Center'],
+    [19, 'Completed',         3, [2],    2200, 1500,  'Referred', 'Urinalysis. Analyser down for service.', null, 'Tagbilaran Diagnostic Center'],
+  ];
+
+  const APPOINTMENTS = SEED.map(([pi, status, li, tis, mins, schedMins, origin, note, referredBy, referrer], i) => {
+    const patient = PEOPLE[pi];
+    const lab = LABS[li];
+    const trail = trailFor(status, lab, patient.name, mins, origin, referrer);
+    const latest = trail[trail.length - 1];
+    const tests = tis.map(t => TESTS[t]);
+    return {
+      id: 'APT-' + (412 - i),
+      patient: patient.name,
+      patientId: patient.id,
+      age: patient.age,
+      sex: patient.sex,
+      municipality: patient.municipality,
+      origin,
+      /* Which facility originated the appointment. Null when the patient booked it. */
+      fromFacility: origin === 'Personal' ? null : (referrer || RHU),
+      referredBy: referredBy || null,
+      lab,
+      labStaff: LAB_STAFF[lab],
+      tests,
+      test: tests.join(', '),
+      scheduledAt: slotStamp(schedMins),
+      scheduledTime: clock(schedMins),
+      scheduledPast: schedMins > 0,
+      schedMins,
+      note,
+      status,
+      updated: latest.at,
+      created: trail[0].at,
+      expectedBy: slotStamp(schedMins),
+      declineReason: status === 'Declined'
+        ? (i === 1
+          ? 'Analyser reagent out of stock until 18 September. Refer the patient to another partner laboratory.'
+          : 'Radiology unit closed for maintenance until 18 September. Your health centre has been told and will arrange another facility.')
+        : null,
+      proposedSlot: status === 'Reschedule proposed' ? proposedSlotFor(lab, slotStamp(schedMins)) : null,
+      proposedAt: status === 'Reschedule proposed' ? latest.at : null,
+      respondMinsLeft: status === 'Reschedule proposed' ? Math.max(0, RESPOND_WINDOW - mins) : null,
+      respondCountdown: status === 'Reschedule proposed' ? countdown(Math.max(0, RESPOND_WINDOW - mins)) : null,
+      rescheduleReason: status === 'Reschedule proposed'
+        ? 'The time you chose is no longer open at this facility.'
+        : null,
+      result: ['Endorsed', 'Completed', 'Result voided'].includes(status)
+        ? { file: 'result-' + (412 - i) + '.pdf', size: '148 KB', released: latest.at, by: LAB_STAFF[lab], voided: status === 'Result voided' }
+        : null,
+      trail,
+    };
+  });
+
+  const WALLET_PATIENT = PEOPLE[0];
+
+  /* The wallet patient owns four appointments, not two. Assigning them here rather than
+     grafting other patients' records onto her at render time is what keeps the RHU portal,
+     the laboratory portal and the wallet showing one patient per appointment ID. */
+  APPOINTMENTS.filter(a => a.patientId !== WALLET_PATIENT.id
+      && ['Endorsed', 'Accepted', 'Sent'].includes(a.status))
+    .slice(0, 2)
+    .forEach(a => { a.patient = WALLET_PATIENT.name; a.patientId = WALLET_PATIENT.id; });
+
+  /* Patient-entered, never computed or interpreted by VITAL (brief §5). */
+  const PROFILE = [
+    { label: 'Age', value: '34 years', updated: '02 Feb 2026' },
+    { label: 'Sex', value: 'Female', updated: '02 Feb 2026' },
+    { label: 'Height', value: '1.55 m', updated: '02 Feb 2026' },
+    { label: 'Weight', value: '58 kg', updated: '04 Aug 2026' },
+    { label: 'Blood type', value: 'O+', updated: '02 Feb 2026' },
+    { label: 'Allergies', value: 'Penicillin', updated: '11 Jun 2026' },
+  ];
+
+  const CONSENTS = [
+    { facility: 'Loon Rural Health Unit', kind: 'Referring provider', referralId: null, scope: 'Appointments and results you send through this health centre', granted: '02 Feb · 09:14', until: 'No end date', active: true },
+    { facility: 'Panglao Island Medical Lab', kind: 'Receiving facility', referralId: 'APT-410', scope: 'One appointment — CBC, APT-410', granted: '14 Sep · 08:12', until: 'When this appointment closes', active: true },
+    { facility: 'Loon Heritage Clinical Lab', kind: 'Receiving facility', referralId: 'APT-403', scope: 'One appointment — fasting blood sugar, APT-403', granted: '11 Sep · 10:02', until: 'Closed 13 Sep', active: false },
+  ];
+
+  const DOCUMENTS = [
+    { name: 'Urinalysis result', facility: 'Loon Heritage Clinical Lab', date: '13 Sep · 16:22', kind: 'Result', voided: false },
+    { name: 'Fasting blood sugar result', facility: 'Loon Heritage Clinical Lab', date: '11 Sep · 14:05', kind: 'Result', voided: false },
+    { name: 'Complete blood count result', facility: 'Tagbilaran Diagnostic Center', date: '28 Aug · 11:41', kind: 'Result', voided: true },
+    { name: 'Complete blood count result', facility: 'Tagbilaran Diagnostic Center', date: '28 Aug · 15:09', kind: 'Result', voided: false },
+  ];
+
+  /* Two bands, tier orders within a band only — never across it (brief §3.2).
+     A test is bookable at a facility when the facility offers it and does not require a
+     referral for it. One or more bookable tests and the row books; zero and it is disabled.
+     A referral requirement therefore never disables a row on its own. */
+  function rankFacilities(selected) {
+    const picked = selected && selected.length ? selected : [];
+    return FACILITIES
+      .map(f => {
+        const missing = picked.filter(t => !f.coverage.includes(t));
+        /* Tests this facility performs but only accepts with an RHU referral — declared at registration. */
+        const referralOnly = picked.filter(t => f.coverage.includes(t) && (f.referralTests || []).includes(t));
+        const bookable = picked.filter(t => f.coverage.includes(t) && !(f.referralTests || []).includes(t));
+        return {
+          ...f, missing, referralOnly, bookable,
+          blocked: picked.length > 0 && bookable.length === 0,
+          full: missing.length === 0,
+          have: picked.length - missing.length,
+        };
+      })
+      .filter(f => picked.length === 0 || f.have > 0)
+      .sort((a, b) =>
+        (a.full === b.full ? 0 : a.full ? -1 : 1) ||
+        (b.have - a.have) ||
+        (a.partner === b.partner ? 0 : a.partner ? -1 : 1));
+  }
+
+  /* Staff accounts. A user belongs to exactly one facility; there is no cross-facility login. */
+  const USERS = [{ name: RHU_STAFF, facility: RHU, role: 'Health centre staff' }].concat(
+    LABS.map(f => ({
+      name: LAB_STAFF[f],
+      facility: f,
+      role: capabilitiesOf(f).canRefer ? 'Clinic staff' : 'Laboratory staff',
+    })));
+
+  /* Every trail entry on every appointment, flattened. The trail rendered on a detail screen
+     and this list are the same records — not two sources. */
+  const STATUS_EVENTS = APPOINTMENTS.reduce((acc, a) => acc.concat(
+    a.trail.map(ev => ({
+      appointmentId: a.id, status: ev.status, at: ev.at, minutesBefore: ev._m,
+      actor: ev.actor, facility: ev.facility,
+    }))), []);
+
+  /* Only six transitions plus one 24-hour reminder reach the patient (brief §7). */
+  function notificationsFor(appointments) {
+    const out = [];
+    const push = (mins, kind, message, id) => { if (mins >= 0) out.push({ mins, at: stamp(mins), kind, message, appointmentId: id }); };
+    appointments.forEach(r => {
+      const day = (r.scheduledAt || '').split(' · ')[0];
+      const time = (r.scheduledAt || '').split(' · ')[1];
+      r.trail.forEach(ev => {
+        if (ev.status === 'Created' && r.origin === 'Referred') push(ev._m, 'Scheduled', RHU + ' scheduled an appointment for you on ' + day + '.', r.id);
+        if (ev.status === 'Reschedule proposed') push(ev._m, 'New time proposed', r.lab + ' proposed a new time for your appointment: ' + r.proposedSlot + '.', r.id);
+        if (ev.status === 'Accepted') push(ev._m, 'Confirmed', r.lab + ' confirmed your appointment.', r.id);
+        if (ev.status === 'Declined') push(ev._m, 'Declined', r.lab + ' couldn’t accept your appointment. Choose another facility.', r.id);
+        if (ev.status === 'Endorsed') push(ev._m, 'Result ready', 'Your result from ' + r.lab + ' is ready to view.', r.id);
+        if (ev.status === 'Consent revoked') push(ev._m, 'Access changed', 'You’ve removed ' + r.lab + '’s access.', r.id);
+      });
+      if (typeof r.schedMins === 'number' && !['Declined', 'No-show', 'Consent revoked', 'Completed'].includes(r.status)) {
+        push(r.schedMins + 1440, 'Reminder', 'Reminder: your appointment at ' + r.lab + ' is tomorrow at ' + time + '.', r.id);
+      }
+    });
+    return out.sort((a, b) => a.mins - b.mins);
+  }
+  const NOTIFICATIONS = notificationsFor(APPOINTMENTS.filter(a => a.patientId === PEOPLE[0].id));
+
+  window.VITAL_FIXTURE = {
+    RHU, RHU_STAFF, LABS, TESTS, TEST_META, FACILITIES, LAB_STAFF, PEOPLE,
+    CAPABILITIES, capabilitiesOf, SCHEDULE, slotsFor, slotLabels, proposedSlotFor,
+    RESPOND_WINDOW, countdown,
+    APPOINTMENTS, REFERRALS: APPOINTMENTS, CONSENTS, DOCUMENTS, PROFILE,
+    WALLET_PATIENT, stamp, clock, slotStamp, trailFor, rankFacilities,
+    USERS, STATUS_EVENTS, NOTIFICATIONS, notificationsFor,
+    /* Canonical collection names. Same objects as above, not copies. */
+    patients: PEOPLE, facilities: FACILITIES, users: USERS, appointments: APPOINTMENTS,
+    status_events: STATUS_EVENTS, documents: DOCUMENTS, consent_grants: CONSENTS,
+    published_slots: SCHEDULE, notifications: NOTIFICATIONS, tests: TEST_META,
+    SLOTS: slotsFor('Tagbilaran Diagnostic Center'),
+    LAB_SIGNED_IN: 'Tagbilaran Diagnostic Center',
+  };
+})();
+
+  </script>
+  <style>
+    body { margin: 0; background: var(--color-cream-paper); }
+    a { color: var(--color-forest-ink); text-decoration: underline; }
+    a:hover { color: var(--color-forest-shadow); }
+    *:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+  </style>
+</helmet>
+<div data-density="compact" style="min-height:100vh;background:var(--color-cream-paper);font-family:var(--font-sans);font-size:14px;line-height:1.5;color:var(--color-charcoal);-webkit-font-smoothing:antialiased">
+
+  <div style="display:flex;align-items:center;gap:12px;min-height:40px;padding:8px 24px;border-bottom:1px solid var(--color-border-strong);position:sticky;top:0;background:var(--color-keylime-wash);z-index:5">
+    <span style="font-weight:600;letter-spacing:0.14em;font-size:13px;color:var(--color-forest-ink)">VITAL</span>
+    <span style="color:var(--color-forest-ink);display:flex">{{ iconUser }}</span>
+    <div style="display:flex;align-items:baseline;gap:8px">
+      <span style="font-weight:600">J. Bacarro</span>
+      <span style="color:var(--color-charcoal-muted);font-size:13px">Midwife · Loon Rural Health Unit</span>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+      <span style="color:var(--color-charcoal-muted);font-size:13px">Shared terminal</span>
+      <button type="button" style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:var(--radius-control);border:1px solid var(--color-border-input);background:transparent;font-family:var(--font-sans);font-size:13px;font-weight:500;color:var(--color-forest-ink);cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">{{ iconUsers }} Switch user</button>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:12px;padding:8px 24px;background:var(--color-cream-paper);border-bottom:1px solid var(--color-border-strong)">
+    <span style="font-size:12px;color:var(--color-charcoal-muted)">Prototype screens</span>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <sc-for list="{{ screens }}" as="s" hint-placeholder-count="7">
+        <button type="button" onClick="{{ s.go }}" style="height:28px;padding:0 10px;border-radius:var(--radius-control);border:1px solid {{ s.border }};background:{{ s.bg }};color:{{ s.ink }};font-family:var(--font-sans);font-size:12px;font-weight:{{ s.weight }};cursor:pointer;transition:background-color 120ms ease">{{ s.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="padding:24px 24px 64px">
+
+    <sc-if value="{{ isQueue }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:16px">
+          <h1 style="margin:0;font-size:20px;font-weight:600;letter-spacing:var(--tracking-heading);color:var(--color-forest-ink)">Appointment queue</h1>
+          <span style="color:var(--color-charcoal-muted);font-variant-numeric:tabular-nums">{{ countLabel }}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:var(--radius-badge);border:1px solid var(--color-border-input);font-size:12px;color:var(--color-charcoal)">{{ facilityType }} · {{ capabilityLine }}</span>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button type="button" onClick="{{ goNew }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:var(--color-forest-ink);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:14px;font-weight:500;cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-forest-shadow)">{{ iconFilePlus }} New appointment</button>
+          </div>
+        </div>
+
+        <sc-if value="{{ mergedQueue }}" hint-placeholder-val="{{ false }}">
+          <div role="tablist" style="display:flex;gap:4px;border-bottom:1px solid var(--color-border-strong);margin-bottom:12px">
+            <sc-for list="{{ dirTabs }}" as="tab" hint-placeholder-count="2">
+              <button type="button" role="tab" onClick="{{ tab.select }}" aria-selected="{{ tab.on }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border:0;border-bottom:2px solid {{ tab.underline }};background:transparent;font-family:var(--font-sans);font-size:14px;font-weight:{{ tab.weight }};color:{{ tab.ink }};cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">{{ tab.label }}<span style="font-variant-numeric:tabular-nums;color:var(--color-charcoal-muted);font-weight:400">{{ tab.count }}</span></button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div role="tablist" style="display:flex;gap:4px;border-bottom:1px solid var(--color-border-strong);margin-bottom:12px">
+          <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="4">
+            <button type="button" role="tab" onClick="{{ tab.select }}" aria-selected="{{ tab.on }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border:0;border-bottom:2px solid {{ tab.underline }};background:transparent;font-family:var(--font-sans);font-size:14px;font-weight:{{ tab.weight }};color:{{ tab.ink }};cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">{{ tab.label }}<span style="font-variant-numeric:tabular-nums;color:var(--color-charcoal-muted);font-weight:400">{{ tab.count }}</span></button>
+          </sc-for>
+        </div>
+
+        <div style="border:1px solid var(--color-border-strong);border-radius:var(--radius-card);overflow:hidden">
+          <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+            <colgroup><col style="width:170px"><col style="width:18%"><col style="width:24%"><col style="width:18%"><col style="width:150px"><col style="width:140px"></colgroup>
+            <thead>
+              <tr>
+                <th scope="col" style="text-align:left;padding:8px 12px;font-size:12px;font-weight:600;letter-spacing:var(--tracking-column-header);text-transform:uppercase;color:var(--color-charcoal-muted);border-bottom:1px solid var(--color-border-strong)">Status</th>
+                <th scope="col" style="text-align:left;padding:8px 12px;font-size:12px;font-weight:600;letter-spacing:var(--tracking-column-header);text-transform:uppercase;color:var(--color-charcoal-muted);border-bottom:1px solid var(--color-border-strong)">Patient name</th>
+                <th scope="col" style="text-align:left;padding:8px 12px;font-size:12px;font-weight:600;letter-spacing:var(--tracking-column-header);text-transform:uppercase;color:var(--color-charcoal-muted);border-bottom:1px solid var(--color-border-strong)">Receiving laboratory</th>
+                <th scope="col" style="text-align:left;padding:8px 12px;font-size:12px;font-weight:600;letter-spacing:var(--tracking-column-header);text-transform:uppercase;color:var(--color-charcoal-muted);border-bottom:1px solid var(--color-border-strong)">Test requested</th>
+                <th scope="col" style="text-align:left;padding:8px 12px;font-size:12px;font-weight:600;letter-spacing:var(--tracking-column-header);text-transform:uppercase;color:var(--color-charcoal-muted);border-bottom:1px solid var(--color-border-strong)">Scheduled</th>
+                <th scope="col" style="text-align:right;padding:8px 12px;font-size:12px;font-weight:600;letter-spacing:var(--tracking-column-header);text-transform:uppercase;color:var(--color-charcoal-muted);border-bottom:1px solid var(--color-border-strong)">Last updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ rows }}" as="row" hint-placeholder-count="12">
+                <tr tabindex="0" role="button" onClick="{{ row.open }}" onKeyDown="{{ row.onKey }}" style="height:40px;cursor:pointer;border-bottom:1px solid var(--color-border-strong);border-left:3px solid {{ row.accent }};transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">
+                  <td style="padding:0 12px"><span style="display:inline-flex;align-items:center;gap:8px;padding:3px 10px;border-radius:var(--radius-badge);font-size:12px;font-weight:500;white-space:nowrap;background:{{ row.fill }};color:{{ row.ink }}">{{ row.iconEl }}{{ row.label }}</span></td>
+                  <td style="padding:0 12px;font-weight:500">{{ row.patient }}</td>
+                  <td style="padding:0 12px">{{ row.lab }}</td>
+                  <td style="padding:0 12px">{{ row.test }}</td>
+                  <td style="padding:0 12px;font-variant-numeric:tabular-nums;white-space:nowrap">{{ row.scheduledAt }}</td>
+                  <td style="padding:0 12px;text-align:right;color:var(--color-charcoal-muted);font-variant-numeric:tabular-nums;white-space:nowrap">{{ row.updated }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <p style="margin:12px 0 0;font-size:12px;color:var(--color-charcoal-muted)">Synthetic records. Never place real patient data in a prototype.</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isNew }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:880px">
+        <h1 style="margin:0 0 16px;font-size:20px;font-weight:600;letter-spacing:var(--tracking-heading);color:var(--color-forest-ink)">Create appointment</h1>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px;align-items:start">
+          <div style="border:1px solid var(--color-border-strong);border-radius:var(--radius-card);padding:16px;display:flex;flex-direction:column;gap:12px">
+            <label style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:12px;font-weight:600;color:var(--color-forest-ink)">Patient</span>
+              <select onChange="{{ setPatient }}" value="{{ form.patient }}" style="height:40px;padding:0 12px;border:1px solid var(--color-border-input);border-radius:var(--radius-control);background:var(--color-cream-paper);font-family:var(--font-sans);font-size:14px;color:var(--color-charcoal)">
+                <sc-for list="{{ patientOptions }}" as="p" hint-placeholder-count="6"><option value="{{ p.value }}">{{ p.label }}</option></sc-for>
+              </select>
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">Not in this list? Search across facilities on the patient search screen.</span>
+            </label>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-size:12px;font-weight:600;color:var(--color-forest-ink)">Tests requested</span>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <sc-for list="{{ testChips }}" as="t" hint-placeholder-count="8">
+                  <button type="button" onClick="{{ t.toggle }}" aria-pressed="{{ t.on }}" style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:var(--radius-control);border:1px solid {{ t.border }};background:{{ t.bg }};font-family:var(--font-sans);font-size:13px;font-weight:{{ t.weight }};color:var(--color-charcoal);cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">{{ t.iconEl }}{{ t.name }}</button>
+                </sc-for>
+              </div>
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">The laboratory list below is filtered and ranked against this selection.</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-size:12px;font-weight:600;color:var(--color-forest-ink)">Receiving laboratory</span>
+              <sc-if value="{{ hasFull }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:12px;color:var(--color-charcoal-muted)">Offers every test requested</span>
+              </sc-if>
+              <sc-for list="{{ labFull }}" as="f" hint-placeholder-count="2">
+                <button type="button" onClick="{{ f.pick }}" aria-pressed="{{ f.on }}" style="display:flex;align-items:center;gap:12px;text-align:left;min-height:40px;padding:8px 12px;border-radius:var(--radius-control);border:1px solid {{ f.border }};background:{{ f.bg }};font-family:var(--font-sans);font-size:14px;color:var(--color-charcoal);cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">
+                  <span style="color:var(--color-forest-ink);display:flex">{{ f.radio }}</span>
+                  <span style="display:flex;flex-direction:column;min-width:0">
+                    <span style="font-weight:500">{{ f.name }}</span>
+                    <span style="font-size:12px;color:var(--color-charcoal-muted)">{{ f.where }}</span>
+                  </span>
+                  <sc-if value="{{ f.partner }}" hint-placeholder-val="{{ false }}">
+                    <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:var(--radius-badge);border:1px solid var(--color-border-input);font-size:12px;white-space:nowrap">{{ f.partnerIcon }}Partner facility</span>
+                  </sc-if>
+                </button>
+              </sc-for>
+
+              <sc-if value="{{ hasPartial }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:12px;color:var(--color-charcoal-muted);padding-top:4px">Offers some of the tests requested</span>
+              </sc-if>
+              <sc-for list="{{ labPartial }}" as="f" hint-placeholder-count="2">
+                <button type="button" onClick="{{ f.pick }}" aria-pressed="{{ f.on }}" style="display:flex;align-items:center;gap:12px;text-align:left;min-height:40px;padding:8px 12px;border-radius:var(--radius-control);border:1px solid {{ f.border }};background:{{ f.bg }};font-family:var(--font-sans);font-size:14px;color:var(--color-charcoal);cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">
+                  <span style="color:var(--color-forest-ink);display:flex">{{ f.radio }}</span>
+                  <span style="display:flex;flex-direction:column;min-width:0">
+                    <span style="font-weight:500">{{ f.name }}</span>
+                    <span style="font-size:12px;color:var(--color-charcoal-muted)">{{ f.where }}</span>
+                    <span style="font-size:12px;color:var(--color-amber-hold)">{{ f.missingLine }}</span>
+                  </span>
+                  <sc-if value="{{ f.partner }}" hint-placeholder-val="{{ false }}">
+                    <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:var(--radius-badge);border:1px solid var(--color-border-input);font-size:12px;white-space:nowrap">{{ f.partnerIcon }}Partner facility</span>
+                  </sc-if>
+                </button>
+              </sc-for>
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">Laboratories that offer every test requested are always listed first. A partner listing only reorders laboratories inside a band.</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-size:12px;font-weight:600;color:var(--color-forest-ink)">Scheduled time</span>
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">{{ slotSourceLine }}</span>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <sc-for list="{{ slotChips }}" as="sl" hint-placeholder-count="6">
+                  <button type="button" onClick="{{ sl.pick }}" aria-pressed="{{ sl.on }}" style="height:32px;padding:0 12px;border-radius:var(--radius-control);border:1px solid {{ sl.border }};background:{{ sl.bg }};color:{{ sl.ink }};font-family:var(--font-sans);font-size:13px;font-variant-numeric:tabular-nums;cursor:pointer">{{ sl.label }}</button>
+                </sc-for>
+              </div>
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">Only times the receiving facility has published can be chosen, so the facility is confirming a slot it already offered rather than judging an arbitrary one. Slots are synthetic; this prototype does not manage capacity.</span>
+            </div>
+            <label style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:12px;font-weight:600;color:var(--color-forest-ink)">Clinical note</span>
+              <textarea onChange="{{ setNote }}" rows="4" placeholder="Why the test is needed, in one or two sentences." style="padding:8px 12px;border:1px solid var(--color-border-input);border-radius:var(--radius-control);background:var(--color-cream-paper);font-family:var(--font-sans);font-size:14px;color:var(--color-charcoal);resize:vertical"></textarea>
+              <span style="font-size:12px;color:var(--color-charcoal-muted)">The receiving laboratory and the patient both read this note.</span>
+            </label>
+            <div style="display:flex;gap:8px;align-items:center;padding-top:4px">
+              <button type="button" onClick="{{ sendAppointment }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:var(--color-forest-ink);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:14px;font-weight:500;cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-forest-shadow)">{{ iconSend }} Send appointment</button>
+              <button type="button" onClick="{{ goQueue }}" style="height:40px;padding:0 16px;border-radius:var(--radius-control);border:1px solid var(--color-border-input);background:transparent;font-family:var(--font-sans);font-size:14px;font-weight:500;color:var(--color-forest-ink);cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">Discard</button>
+            </div>
+          </div>
+          <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:16px;font-size:13px;display:flex;flex-direction:column;gap:8px">
+            <span style="font-weight:600;color:var(--color-forest-ink)">Consent</span>
+            <span>Sending this appointment asks the patient's health wallet to grant {{ form.lab }} access to this appointment and its result.</span>
+            <span>The laboratory cannot open the record until the patient grants access.</span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDenied }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:620px">
+        <button type="button" onClick="{{ goQueue }}" style="display:inline-flex;align-items:center;gap:8px;height:32px;margin-bottom:12px;padding:0 10px 0 6px;border-radius:var(--radius-control);border:1px solid transparent;background:transparent;font-family:var(--font-sans);font-size:13px;color:var(--color-forest-ink);cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">{{ iconBack }} Appointment queue</button>
+        <div style="border-left:3px solid var(--color-clay-alert);background:var(--color-clay-wash);border-radius:var(--radius-card);padding:16px;display:flex;gap:12px;align-items:flex-start">
+          <span style="color:var(--color-clay-alert);padding-top:2px">{{ iconShieldOff }}</span>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-size:14px;font-weight:600;color:var(--color-clay-alert)">Access denied</h1>
+            <span style="font-size:13px">{{ deniedBody }}</span>
+            <span style="font-size:13px;color:var(--color-charcoal-muted)">This access attempt has been recorded in the audit log.</span>
+            <button type="button" onClick="{{ goQueue }}" style="align-self:flex-start;margin-top:4px;height:32px;padding:0 12px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:transparent;font-family:var(--font-sans);font-size:13px;font-weight:500;color:var(--color-forest-ink);cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">Back to queue</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:1100px">
+        <button type="button" onClick="{{ goQueue }}" style="display:inline-flex;align-items:center;gap:8px;height:32px;margin-bottom:12px;padding:0 10px 0 6px;border-radius:var(--radius-control);border:1px solid transparent;background:transparent;font-family:var(--font-sans);font-size:13px;color:var(--color-forest-ink);cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">{{ iconBack }} Appointment queue</button>
+
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px">
+          <h1 style="margin:0;font-size:20px;font-weight:600;letter-spacing:var(--tracking-heading);color:var(--color-forest-ink)">{{ detail.patient }}</h1>
+          <span style="display:inline-flex;align-items:center;gap:8px;padding:3px 10px;border-radius:var(--radius-badge);font-size:12px;font-weight:500;background:{{ detail.fill }};color:{{ detail.ink }}">{{ detail.iconEl }}{{ detail.label }}</span>
+          <span style="color:var(--color-charcoal-muted);font-variant-numeric:tabular-nums">{{ detail.id }}</span>
+        </div>
+        <p style="margin:0 0 16px;color:var(--color-charcoal-muted);font-size:13px;font-variant-numeric:tabular-nums">{{ detail.meta }}</p>
+
+        <sc-if value="{{ detail.isOverdue }}" hint-placeholder-val="{{ false }}">
+          <div style="border-left:3px solid var(--color-amber-hold);background:var(--color-amber-wash);border-radius:var(--radius-card);padding:16px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start">
+            <span style="color:var(--color-amber-hold);padding-top:2px">{{ iconClock }}</span>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-weight:600;color:var(--color-amber-hold)">{{ detail.overdueLine }}</span>
+              <span style="font-size:13px">Follow up with the patient or mark as no-show. The laboratory has accepted the appointment and is holding a slot.</span>
+              <div style="display:flex;gap:8px;padding-top:4px">
+                <button type="button" onClick="{{ openNoShow }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:var(--radius-control);border:1px solid var(--color-clay-alert);background:var(--color-clay-alert);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:14px;font-weight:500;cursor:pointer">{{ iconUserX }} Patient did not arrive</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ detail.isProposed }}" hint-placeholder-val="{{ false }}">
+          <div style="border-left:3px solid var(--color-amber-hold);background:var(--color-amber-wash);border-radius:var(--radius-card);padding:16px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start">
+            <span style="color:var(--color-amber-hold);padding-top:2px">{{ iconHourglass }}</span>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-weight:600;color:var(--color-amber-hold)">{{ detail.lab }} proposed a new time</span>
+              <span style="font-size:13px">You have been told because you referred this patient. Only the patient can accept a new time — they are the one travelling. Nothing is required of this health centre.</span>
+              <dl style="margin:0;display:grid;grid-template-columns:150px minmax(0,1fr);row-gap:4px;column-gap:12px;font-size:13px;padding:12px;background:var(--color-cream-paper);border-radius:var(--radius-control)">
+                <dt style="color:var(--color-charcoal-muted)">Original slot</dt><dd style="margin:0;font-variant-numeric:tabular-nums">{{ detail.scheduledAt }}</dd>
+                <dt style="color:var(--color-charcoal-muted)">Proposed slot</dt><dd style="margin:0;font-variant-numeric:tabular-nums">{{ detail.proposedSlot }}</dd>
+                <dt style="color:var(--color-charcoal-muted)">Patient response</dt><dd style="margin:0;font-variant-numeric:tabular-nums">{{ detail.respondCountdown }}</dd>
+              </dl>
+              <span style="font-size:13px">If the patient does not answer within 48 hours the appointment returns to the facility as declined, with the reason "No response to proposed time."</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ detail.isDeclined }}" hint-placeholder-val="{{ false }}">
+          <div style="border-left:3px solid var(--color-clay-alert);background:var(--color-clay-wash);border-radius:var(--radius-card);padding:16px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start">
+            <span style="color:var(--color-clay-alert);padding-top:2px">{{ iconCircleX }}</span>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-weight:600;color:var(--color-clay-alert)">Declined by {{ detail.lab }}</span>
+              <span style="font-size:13px">{{ detail.declineReason }}</span>
+              <span style="font-size:12px;color:var(--color-charcoal-muted);font-variant-numeric:tabular-nums">{{ detail.declinedBy }}</span>
+              <span style="font-size:13px">This appointment is closed. Create a new appointment to send the patient to another laboratory.</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ detail.isRevoked }}" hint-placeholder-val="{{ false }}">
+          <div style="border-left:3px solid var(--color-amber-hold);background:var(--color-amber-wash);border-radius:var(--radius-card);padding:16px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start">
+            <span style="color:var(--color-amber-hold);padding-top:2px">{{ iconShieldOff }}</span>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-weight:600;color:var(--color-amber-hold)">The patient revoked access to this record</span>
+              <span style="font-size:13px">The clinical content has been withdrawn. The appointment and its status trail remain for the audit log. This appointment is closed.</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="border:1px solid var(--color-border-strong);border-radius:var(--radius-card);padding:16px">
+              <h2 style="margin:0 0 12px;font-size:14px;font-weight:600;color:var(--color-forest-ink)">Appointment</h2>
+              <dl style="margin:0;display:grid;grid-template-columns:150px minmax(0,1fr);row-gap:8px;column-gap:12px;font-size:13px">
+                <dt style="color:var(--color-charcoal-muted)">Receiving facility</dt><dd style="margin:0">{{ detail.lab }}</dd>
+                <dt style="color:var(--color-charcoal-muted)">Test requested</dt><dd style="margin:0">{{ detail.test }}</dd>
+                <dt style="color:var(--color-charcoal-muted)">Scheduled</dt><dd style="margin:0;font-variant-numeric:tabular-nums">{{ detail.scheduledAt }}</dd>
+                <dt style="color:var(--color-charcoal-muted)">Referring provider</dt><dd style="margin:0">J. Bacarro · Loon Rural Health Unit</dd>
+                <dt style="color:var(--color-charcoal-muted)">Clinical note</dt><dd style="margin:0">{{ detail.note }}</dd>
+              </dl>
+            </div>
+
+            <sc-if value="{{ detail.hasResult }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid var(--color-border-strong);border-radius:var(--radius-card);padding:16px">
+                <h2 style="margin:0 0 12px;font-size:14px;font-weight:600;color:var(--color-forest-ink)">Result</h2>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--color-keylime-wash);border-radius:var(--radius-control)">
+                  <span style="color:var(--color-forest-ink)">{{ iconFileText }}</span>
+                  <div style="display:flex;flex-direction:column;min-width:0">
+                    <span style="font-weight:500">{{ detail.resultFile }}</span>
+                    <span style="font-size:12px;color:var(--color-charcoal-muted);font-variant-numeric:tabular-nums">{{ detail.resultMeta }}</span>
+                  </div>
+                  <a href="#" style="margin-left:auto;font-size:13px">Open result</a>
+                </div>
+                <sc-if value="{{ detail.canAcknowledge }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap">
+                    <button type="button" onClick="{{ acknowledge }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:var(--color-forest-ink);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:14px;font-weight:500;cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-forest-shadow)">{{ iconCheckCheck }} Acknowledge result</button>
+                    <span style="font-size:13px;color:var(--color-charcoal-muted)">Acknowledging records that this health centre has read the result. The appointment then closes as completed.</span>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ detail.awaitingResult }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid var(--color-border-strong);border-radius:var(--radius-card);padding:16px;display:flex;gap:12px;align-items:flex-start">
+                <span style="color:var(--color-charcoal-muted);padding-top:2px">{{ iconHourglass }}</span>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <span style="font-weight:500">No result yet</span>
+                  <span style="font-size:13px;color:var(--color-charcoal-muted)">{{ detail.awaitingLine }} You do not need to do anything until it arrives.</span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="border:1px solid var(--color-border-strong);border-radius:var(--radius-card);padding:16px">
+            <h2 style="margin:0 0 12px;font-size:14px;font-weight:600;color:var(--color-forest-ink)">Status trail</h2>
+            <ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ detail.trail }}" as="e" hint-placeholder-count="4">
+                <li style="display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:12px;align-items:start">
+                  <span style="color:{{ e.hue }};padding-top:2px">{{ e.iconEl }}</span>
+                  <div style="display:flex;flex-direction:column">
+                    <span style="font-weight:500;color:{{ e.hue }}">{{ e.status }}</span>
+                    <span style="font-size:12px;color:var(--color-charcoal-muted)">{{ e.actor }} · {{ e.facility }}</span>
+                    <span style="font-size:12px;color:var(--color-charcoal-muted);font-variant-numeric:tabular-nums">{{ e.at }}</span>
+                  </div>
+                </li>
+              </sc-for>
+            </ol>
+            <p style="margin:12px 0 0;font-size:12px;color:var(--color-charcoal-muted)">Every entry names the person who wrote it. Entries cannot be edited or removed.</p>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:960px">
+        <h1 style="margin:0 0 16px;font-size:20px;font-weight:600;letter-spacing:var(--tracking-heading);color:var(--color-forest-ink)">Patient search</h1>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input onChange="{{ setQuery }}" placeholder="Surname, given name or patient ID" style="flex:1;height:40px;padding:0 12px;border:1px solid var(--color-border-input);border-radius:var(--radius-control);background:var(--color-cream-paper);font-family:var(--font-sans);font-size:14px;color:var(--color-charcoal)">
+        </div>
+        <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:16px;margin-bottom:16px;font-size:13px;display:flex;gap:12px;align-items:flex-start">
+          <span style="color:var(--color-forest-ink);padding-top:2px">{{ iconPeople }}</span>
+          <span>Matching across facilities is not decided yet. These results come from records this health centre has seen. A match found at another facility will need the patient to confirm identity before their record opens — the mechanism is still open.</span>
+        </div>
+        <div style="border:1px solid var(--color-border-strong);border-radius:var(--radius-card);overflow:hidden">
+          <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+            <colgroup><col style="width:28%"><col style="width:150px"><col style="width:80px"><col style="width:18%"><col><col style="width:130px"></colgroup>
+            <thead>
+              <tr>
+                <th scope="col" style="text-align:left;padding:8px 12px;font-size:12px;font-weight:600;letter-spacing:var(--tracking-column-header);text-transform:uppercase;color:var(--color-charcoal-muted);border-bottom:1px solid var(--color-border-strong)">Patient name</th>
+                <th scope="col" style="text-align:left;padding:8px 12px;font-size:12px;font-weight:600;letter-spacing:var(--tracking-column-header);text-transform:uppercase;color:var(--color-charcoal-muted);border-bottom:1px solid var(--color-border-strong)">Patient ID</th>
+                <th scope="col" style="text-align:left;padding:8px 12px;font-size:12px;font-weight:600;letter-spacing:var(--tracking-column-header);text-transform:uppercase;color:var(--color-charcoal-muted);border-bottom:1px solid var(--color-border-strong)">Age</th>
+                <th scope="col" style="text-align:left;padding:8px 12px;font-size:12px;font-weight:600;letter-spacing:var(--tracking-column-header);text-transform:uppercase;color:var(--color-charcoal-muted);border-bottom:1px solid var(--color-border-strong)">Municipality</th>
+                <th scope="col" style="text-align:left;padding:8px 12px;font-size:12px;font-weight:600;letter-spacing:var(--tracking-column-header);text-transform:uppercase;color:var(--color-charcoal-muted);border-bottom:1px solid var(--color-border-strong)">Appointments here</th>
+                <th scope="col" style="text-align:right;padding:8px 12px;font-size:12px;font-weight:600;letter-spacing:var(--tracking-column-header);text-transform:uppercase;color:var(--color-charcoal-muted);border-bottom:1px solid var(--color-border-strong)">Last seen</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ searchRows }}" as="p" hint-placeholder-count="8">
+                <tr style="height:40px;border-bottom:1px solid var(--color-border-strong);transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">
+                  <td style="padding:0 12px;font-weight:500">{{ p.name }}</td>
+                  <td style="padding:0 12px;font-variant-numeric:tabular-nums">{{ p.id }}</td>
+                  <td style="padding:0 12px;font-variant-numeric:tabular-nums">{{ p.age }}</td>
+                  <td style="padding:0 12px">{{ p.municipality }}</td>
+                  <td style="padding:0 12px;font-variant-numeric:tabular-nums">{{ p.count }}</td>
+                  <td style="padding:0 12px;text-align:right;color:var(--color-charcoal-muted);font-variant-numeric:tabular-nums;white-space:nowrap">{{ p.last }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+          <sc-if value="{{ searchEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:24px 16px;display:flex;flex-direction:column;gap:4px">
+              <span style="font-weight:500">No patient matches that search.</span>
+              <span style="font-size:13px;color:var(--color-charcoal-muted)">Check the spelling of the surname, or create the appointment with a new patient record.</span>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ dialog.open }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:24px;z-index:20">
+      <div role="dialog" aria-modal="true" style="max-width:480px;width:100%;background:var(--color-cream-paper);border-radius:var(--radius-card);box-shadow:var(--shadow-floating);padding:24px;display:flex;flex-direction:column;gap:12px">
+        <h2 style="margin:0;font-size:18px;font-weight:600;color:var(--color-forest-ink)">{{ dialog.title }}</h2>
+        <p style="margin:0;font-size:14px">{{ dialog.body }}</p>
+        <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px">
+          <button type="button" onClick="{{ closeDialog }}" style="height:40px;padding:0 16px;border-radius:var(--radius-control);border:1px solid transparent;background:transparent;font-family:var(--font-sans);font-size:14px;font-weight:500;color:var(--color-forest-ink);cursor:pointer;transition:background-color 120ms ease" style-hover="background:var(--color-keylime-wash)">Keep the appointment open</button>
+          <button type="button" onClick="{{ dialog.confirm }}" style="height:40px;padding:0 16px;border-radius:var(--radius-control);border:1px solid var(--color-clay-alert);background:var(--color-clay-alert);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:14px;font-weight:500;cursor:pointer">{{ dialog.action }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { screen: 'queue', filter: 'All', selected: null, referrals: null, query: '', dialog: { open: false }, form: { patient: '', lab: '', test: 'CBC', note: '', tests: ['CBC'], slot: 'Wed 16 Sep · 09:30' } };
+
+  componentDidMount() {
+    this.tick = setInterval(() => {
+      if (window.lucide && window.VITAL_FIXTURE) {
+        clearInterval(this.tick);
+        const F = window.VITAL_FIXTURE;
+        this.setState({
+          referrals: F.REFERRALS.map(r => ({ ...r })),
+          form: { patient: F.PEOPLE[1].name, lab: F.LABS[0], test: 'CBC', note: '', tests: ['CBC'], slot: 'Wed 16 Sep · 09:30' },
+        });
+      }
+    }, 60);
+  }
+  componentWillUnmount() { clearInterval(this.tick); }
+
+  icon(name, size) {
+    const node = window.lucide && window.lucide.icons && window.lucide.icons[name];
+    const box = { width: size, height: size, display: 'block', flex: '0 0 auto' };
+    if (!node) return React.createElement('span', { key: name, style: box });
+    const kids = (node[2] || []).map(([tag, attrs], i) => React.createElement(tag, Object.assign({ key: i }, attrs)));
+    return React.createElement('svg', { key: name, width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round', style: box, 'aria-hidden': 'true' }, kids);
+  }
+
+  meta(status) {
+    const M = {
+      Created: ['FilePlus', 'var(--status-waiting-fill)', 'var(--status-waiting-ink)', 'transparent', 'flight'],
+      Sent: ['Send', 'var(--status-waiting-fill)', 'var(--status-waiting-ink)', 'transparent', 'flight'],
+      Booked: ['CalendarCheck', 'var(--status-waiting-fill)', 'var(--status-waiting-ink)', 'transparent', 'flight'],
+      Received: ['Inbox', 'var(--status-progress-fill)', 'var(--status-progress-ink)', 'transparent', 'flight'],
+      Accepted: ['Check', 'var(--status-progress-fill)', 'var(--status-progress-ink)', 'transparent', 'flight'],
+      'Patient arrived': ['UserCheck', 'var(--status-progress-fill)', 'var(--status-progress-ink)', 'transparent', 'flight'],
+      Endorsed: ['Stamp', 'var(--status-progress-fill)', 'var(--status-progress-ink)', 'transparent', 'flight'],
+      Completed: ['CheckCheck', 'var(--status-done-fill)', 'var(--status-done-ink)', 'transparent', 'closed'],
+      Declined: ['CircleX', 'var(--status-fail-fill)', 'var(--status-fail-ink)', 'var(--color-clay-alert)', 'follow'],
+      'No-show': ['UserX', 'var(--status-attention-fill)', 'var(--status-attention-ink)', 'var(--color-amber-hold)', 'follow'],
+      Overdue: ['Clock', 'var(--status-attention-fill)', 'var(--status-attention-ink)', 'var(--color-amber-hold)', 'follow'],
+      'Consent revoked': ['ShieldOff', 'var(--status-attention-fill)', 'var(--status-attention-ink)', 'var(--color-amber-hold)', 'follow'],
+      'Result voided': ['OctagonAlert', 'var(--status-fail-fill)', 'var(--status-fail-ink)', 'var(--color-clay-alert)', 'follow'],
+      'Reschedule proposed': ['CalendarClock', 'var(--status-attention-fill)', 'var(--status-attention-ink)', 'var(--color-amber-hold)', 'follow'],
+    }[status];
+    return { label: status, iconName: M[0], fill: M[1], ink: M[2], accent: M[3], bucket: M[4] };
+  }
+
+  event(status, referral) {
+    const F = window.VITAL_FIXTURE;
+    const at = F.stamp(0);
+    if (status === 'Completed') return { status, at, actor: F.RHU_STAFF, facility: F.RHU };
+    if (status === 'No-show') return { status, at, actor: F.RHU_STAFF, facility: F.RHU };
+    return { status, at, actor: F.RHU_STAFF, facility: F.RHU };
+  }
+
+  apply(id, status) {
+    this.setState(s => ({
+      dialog: { open: false },
+      referrals: s.referrals.map(r => {
+        if (r.id !== id) return r;
+        const e = this.event(status, r);
+        return { ...r, status, updated: e.at, trail: [...r.trail, e] };
+      }),
+    }));
+  }
+
+  renderVals() {
+    const F = window.VITAL_FIXTURE;
+    const s = this.state;
+    const all = s.referrals || [];
+    const withMeta = all.map(r => ({ ...r, ...this.meta(r.status) }));
+    /* Capabilities, not facility type, decide what this portal shows. A facility with both
+       gets one queue with a direction filter rather than two screens. */
+    const SIGNED_IN = F ? F.RHU : '';
+    const caps = F ? F.capabilitiesOf(SIGNED_IN) : { type: '', canRefer: true, canReceive: false };
+    const mergedQueue = caps.canRefer && caps.canReceive;
+    const direction = s.direction || 'Outgoing';
+    const dirTabs = ['Outgoing', 'Incoming'].map(label => {
+      const on = label === direction;
+      return {
+        label, on,
+        count: withMeta.filter(r => (label === 'Outgoing' ? r.fromFacility === SIGNED_IN : r.fromFacility !== SIGNED_IN)).length,
+        underline: on ? 'var(--color-forest-ink)' : 'transparent',
+        weight: on ? 600 : 400,
+        ink: on ? 'var(--color-forest-ink)' : 'var(--color-charcoal)',
+        select: () => this.setState({ direction: label }),
+      };
+    });
+    const scoped = mergedQueue
+      ? withMeta.filter(r => (direction === 'Outgoing' ? r.fromFacility === SIGNED_IN : r.fromFacility !== SIGNED_IN))
+      : withMeta;
+    const buckets = {
+      All: scoped,
+      'In flight': scoped.filter(r => r.bucket === 'flight'),
+      'Needs follow-up': scoped.filter(r => r.bucket === 'follow'),
+      Closed: scoped.filter(r => r.bucket !== 'flight'),
+    };
+    const rows = (buckets[s.filter] || []).map(r => ({
+      ...r,
+      iconEl: this.icon(r.iconName, 16),
+      open: () => this.setState({ screen: 'detail', selected: r.id }),
+      onKey: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState({ screen: 'detail', selected: r.id }); } },
+    }));
+
+    const tabs = ['All', 'In flight', 'Needs follow-up', 'Closed'].map(label => {
+      const on = label === s.filter;
+      return { label, count: (buckets[label] || []).length, on, underline: on ? 'var(--color-forest-ink)' : 'transparent', weight: on ? 600 : 400, ink: on ? 'var(--color-forest-ink)' : 'var(--color-charcoal)', select: () => this.setState({ filter: label }) };
+    });
+
+    const screenDefs = [
+      ['queue', 'R1 Appointment queue'], ['new', 'R2 Create appointment'], ['detail', 'R3–R6 Appointment detail'], ['search', 'R7 Patient search'],
+      ['denied', 'R8 Access denied'],
+    ];
+    const screens = screenDefs.map(([id, label]) => {
+      const on = s.screen === id;
+      return {
+        label, on,
+        bg: on ? 'var(--color-forest-ink)' : 'transparent',
+        ink: on ? 'var(--color-cream-paper)' : 'var(--color-forest-ink)',
+        border: on ? 'var(--color-forest-ink)' : 'var(--color-border-input)',
+        weight: on ? 600 : 400,
+        go: () => this.setState(st => ({ screen: id, selected: id === 'detail' ? (st.selected || (all[0] && all[0].id)) : st.selected })),
+      };
+    });
+
+    const sel = withMeta.find(r => r.id === s.selected) || withMeta[0];
+    let detail = { trail: [] };
+    if (sel) {
+      const hue = st => {
+        const g = this.meta(st);
+        return g.bucket === 'follow' ? (st === 'Declined' || st === 'Result voided' ? 'var(--color-clay-alert)' : 'var(--color-amber-hold)') : 'var(--color-forest-ink)';
+      };
+      detail = {
+        ...sel,
+        iconEl: this.icon(sel.iconName, 16),
+        meta: `${sel.id} · ${sel.age} · ${sel.sex} · ${sel.municipality} · patient ID ${sel.patientId} · created ${sel.created}`,
+        isOverdue: sel.status === 'Overdue',
+        isDeclined: sel.status === 'Declined',
+        isProposed: sel.status === 'Reschedule proposed',
+        proposedSlot: sel.proposedSlot || '',
+        respondCountdown: sel.respondCountdown || '',
+        isRevoked: sel.status === 'Consent revoked',
+        overdueLine: `Expected by ${sel.expectedBy}. The patient has not arrived.`,
+        declinedBy: sel.status === 'Declined' ? `${sel.labStaff} · ${sel.lab} · ${sel.updated}` : '',
+        hasResult: !!sel.result,
+        canAcknowledge: sel.status === 'Endorsed',
+        resultFile: sel.result ? sel.result.file : '',
+        resultMeta: sel.result ? `${sel.result.size} · released ${sel.result.released} by ${sel.result.by}` : '',
+        awaitingResult: ['Created', 'Sent', 'Received', 'Accepted', 'Patient arrived'].includes(sel.status),
+        awaitingLine: `${sel.lab} has not released a result for this appointment yet.`,
+        trail: sel.trail.map(e => ({ ...e, hue: hue(e.status), iconEl: this.icon(this.meta(e.status).iconName, 16) })),
+      };
+    }
+
+    const q = s.query.trim().toLowerCase();
+    const people = (F ? F.PEOPLE : []).map(p => {
+      const mine = withMeta.filter(r => r.patientId === p.id);
+      return { ...p, count: mine.length, last: mine.length ? mine[0].updated : '—' };
+    }).filter(p => !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
+
+    /* R2 — test filter and facility ranking, same band rule as the wallet (brief §3.2). */
+    const pickedTests = (s.form.tests && s.form.tests.length) ? s.form.tests : ['CBC'];
+    const setForm = patch => this.setState(st => ({ form: { ...st.form, ...patch } }));
+    const testChips = (F ? F.TEST_META : []).map(t => {
+      const on = pickedTests.includes(t.name);
+      return {
+        name: t.name, on,
+        iconEl: this.icon(on ? 'SquareCheck' : 'Square', 16),
+        weight: on ? 500 : 400,
+        border: on ? 'var(--color-forest-ink)' : 'var(--color-border-input)',
+        bg: on ? 'var(--color-keylime-wash)' : 'transparent',
+        toggle: () => setForm({
+          tests: on ? pickedTests.filter(x => x !== t.name) : [...pickedTests, t.name],
+          lab: '',
+        }),
+      };
+    });
+    const rankedLabs = F ? F.rankFacilities(pickedTests) : [];
+    const chosenLab = rankedLabs.some(f => f.name === s.form.lab)
+      ? s.form.lab
+      : (rankedLabs[0] ? rankedLabs[0].name : '');
+    const labCard = f => ({
+      name: f.name,
+      where: `${f.municipality} · ${f.travel}`,
+      partner: f.partner,
+      partnerIcon: this.icon('Handshake', 14),
+      on: chosenLab === f.name,
+      radio: this.icon(chosenLab === f.name ? 'CircleDot' : 'Circle', 16),
+      missingLine: f.missing.length ? `Does not offer ${f.missing.join(' or ')}` : '',
+      border: chosenLab === f.name ? 'var(--color-forest-ink)' : 'var(--color-border-strong)',
+      bg: chosenLab === f.name ? 'var(--color-keylime-wash)' : 'transparent',
+      pick: () => setForm({ lab: f.name }),
+    });
+    const labFull = rankedLabs.filter(f => f.full).map(labCard);
+    const labPartial = rankedLabs.filter(f => !f.full).map(labCard);
+    /* The only slots this form may offer are the ones the receiving facility published (L6). */
+    const slotChips = [];
+    ((F && chosenLab) ? F.slotsFor(chosenLab) : []).forEach(d => d.times.forEach(t => {
+      const label = `${d.day} · ${t}`;
+      slotChips.push({
+        label, on: s.form.slot === label,
+        border: s.form.slot === label ? 'var(--color-forest-ink)' : 'var(--color-border-input)',
+        bg: s.form.slot === label ? 'var(--color-forest-ink)' : 'transparent',
+        ink: s.form.slot === label ? 'var(--color-cream-paper)' : 'var(--color-forest-ink)',
+        pick: () => setForm({ slot: label }),
+      });
+    }));
+    const slotOnSchedule = slotChips.some(c => c.label === s.form.slot);
+    const slotLabel = slotOnSchedule ? s.form.slot : (slotChips[0] ? slotChips[0].label : '');
+    /* Queue and detail columns carry no weekday, so strip it from the chip label. */
+    const slotStamped = slotLabel.replace(/^[A-Za-z]{3} /, '');
+
+    return {
+      screens, tabs, rows,
+      countLabel: rows.length + (rows.length === 1 ? ' appointment' : ' appointments'),
+      isQueue: s.screen === 'queue', isNew: s.screen === 'new', isDetail: s.screen === 'detail', isSearch: s.screen === 'search',
+      detail, form: s.form,
+      patientOptions: (F ? F.PEOPLE : []).map(p => ({ value: p.name, label: `${p.name} · ${p.id} · ${p.age} · ${p.municipality}` })),
+      labOptions: F ? F.LABS : [],
+      testOptions: F ? F.TESTS : [],
+      searchRows: people,
+      searchEmpty: people.length === 0,
+      goQueue: () => this.setState({ screen: 'queue' }),
+      goNew: () => this.setState({ screen: 'new' }),
+      setPatient: e => this.setState({ form: { ...s.form, patient: e.target.value } }),
+      setLab: e => this.setState({ form: { ...s.form, lab: e.target.value } }),
+      testChips, labFull, labPartial, slotChips,
+      mergedQueue, dirTabs,
+      isDenied: s.screen === 'denied',
+      deniedBody: `This patient has not granted ${SIGNED_IN} permission to view this record, or the permission has been withdrawn.`,
+      facilityType: caps.type,
+      capabilityLine: caps.canRefer && caps.canReceive
+        ? 'Refers out and receives'
+        : caps.canRefer ? 'Refers out only' : 'Receives appointments',
+      hasSlots: slotChips.length > 0,
+      slotSourceLine: chosenLab
+        ? `Times published by ${chosenLab}`
+        : 'Choose a receiving facility to see the times it has published.',
+      hasFull: labFull.length > 0,
+      hasPartial: labPartial.length > 0,
+      sendAppointment: () => {
+        const p = F.PEOPLE.find(x => x.name === s.form.patient) || F.PEOPLE[0];
+        const at = F.stamp(0);
+        const id = 'APT-' + (413 + (all.length - 30));
+        const trail = [
+          { status: 'Created', at, actor: F.RHU_STAFF, facility: F.RHU },
+          { status: 'Sent', at, actor: F.RHU_STAFF, facility: F.RHU },
+        ];
+        const fresh = {
+          id, patient: p.name, patientId: p.id, age: p.age, sex: p.sex, municipality: p.municipality,
+          lab: chosenLab, labStaff: F.LAB_STAFF[chosenLab], test: pickedTests.join(', '),
+          tests: pickedTests, origin: 'Referred', referredBy: null,
+          scheduledAt: slotStamped, scheduledTime: slotLabel.split(' · ')[1], scheduledPast: false,
+          note: s.form.note || 'No clinical note recorded.', status: 'Sent', updated: at, created: at,
+          expectedBy: slotStamped, declineReason: null, result: null, trail,
+        };
+        this.setState(st => ({ referrals: [fresh, ...st.referrals], screen: 'detail', selected: id, filter: 'All', form: { ...st.form, note: '' } }));
+      },
+      setNote: e => this.setState({ form: { ...s.form, note: e.target.value } }),
+      setQuery: e => this.setState({ query: e.target.value }),
+      acknowledge: () => this.apply(sel.id, 'Completed'),
+      openNoShow: () => this.setState({
+        dialog: {
+          open: true,
+          title: 'Mark the patient as not arrived?',
+          body: `This records that ${sel.patient} did not arrive at ${sel.lab} for the ${sel.test} test. The appointment closes, the laboratory releases the slot, and the patient sees this in their health wallet. Your name is written to the status trail.`,
+          action: 'Patient did not arrive',
+          confirm: () => this.apply(sel.id, 'No-show'),
+        },
+      }),
+      closeDialog: () => this.setState({ dialog: { open: false } }),
+      dialog: s.dialog,
+      iconUsers: this.icon('Repeat', 16), iconUser: this.icon('UserRound', 16), iconPeople: this.icon('Users', 20), iconFilePlus: this.icon('FilePlus', 16), iconSend: this.icon('Send', 16),
+      iconBack: this.icon('ChevronLeft', 16), iconClock: this.icon('Clock', 20), iconCircleX: this.icon('CircleX', 20),
+      iconShieldOff: this.icon('ShieldOff', 20), iconUserX: this.icon('UserX', 16), iconFileText: this.icon('FileText', 20),
+      iconCheckCheck: this.icon('CheckCheck', 16), iconHourglass: this.icon('Hourglass', 20),
+    };
+  }
+}
+</script>
+</body>
+</html>

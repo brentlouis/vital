@@ -1,0 +1,64 @@
+/* VITAL color — DESIGN.md §1. Light theme only; dark mode is out of scope. */
+:root {
+  /* Foundation */
+  --color-forest-ink: #0f3e17;
+  --color-forest-shadow: #0c2f10;
+  --color-sage-mist: #b1dbb8;
+  --color-keylime-wash: #e1f4df;
+  --color-mint-veil: #cfe7d3;
+  --color-slate-hush: #b6ced5;
+  --color-cream-paper: #fffefc;
+  --color-charcoal: #222222;
+
+  /* Neutrals */
+  --color-charcoal-muted: #6b6b6b;
+  --color-border-strong: #c2bfb6;
+  --color-border-input: #8f8c84;
+  --color-disabled-ink: #8f8c84;
+  --color-border-mist: #efeeeb; /* decorative hairlines only — 1.15:1 */
+
+  /* Semantic status — locked meanings, never decorative */
+  --color-clay-alert: #8c2f2a;
+  --color-clay-wash: #f5e3e1;
+  --color-amber-hold: #8a5a12;
+  --color-amber-wash: #f7edd9;
+
+  --color-focus: #0f3e17;
+  --scrim: rgba(15, 62, 23, 0.32);
+
+  /* Semantic aliases */
+  --text-primary: var(--color-charcoal);
+  --text-heading: var(--color-forest-ink);
+  --text-muted: var(--color-charcoal-muted);
+  --text-inverse: var(--color-cream-paper);
+  --text-disabled: var(--color-disabled-ink);
+  --text-link: var(--color-forest-ink);
+
+  --surface-page: var(--color-cream-paper);
+  --surface-card: var(--color-cream-paper);
+  --surface-tint-1: var(--color-keylime-wash);
+  --surface-tint-2: var(--color-mint-veil);
+  --surface-tint-3: var(--color-sage-mist);
+  --surface-counter: var(--color-slate-hush);
+  --surface-inverse: var(--color-forest-ink);
+
+  --border-divider: var(--color-border-strong);
+  --border-control: var(--color-border-input);
+  --border-hairline: var(--color-border-mist);
+
+  --action-primary: var(--color-forest-ink);
+  --action-primary-hover: var(--color-forest-shadow);
+  --action-destructive: var(--color-clay-alert);
+
+  /* Status groups — DESIGN.md §6.1 */
+  --status-waiting-fill: var(--color-border-mist);
+  --status-waiting-ink: var(--color-charcoal-muted);
+  --status-progress-fill: var(--color-slate-hush);
+  --status-progress-ink: var(--color-forest-ink);
+  --status-done-fill: var(--color-forest-ink);
+  --status-done-ink: var(--color-cream-paper);
+  --status-fail-fill: var(--color-clay-wash);
+  --status-fail-ink: var(--color-clay-alert);
+  --status-attention-fill: var(--color-amber-wash);
+  --status-attention-ink: var(--color-amber-hold);
+}

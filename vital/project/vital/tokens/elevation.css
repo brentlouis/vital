@@ -1,0 +1,11 @@
+/* VITAL elevation — DESIGN.md §4. Default is shadowless; depth is tinted
+   surface layering (cream -> keylime -> mint -> sage -> slate).
+   Shadows exist for exactly three surfaces: dialog, bottom sheet / dropdown,
+   toast. Nothing else in the system casts one. */
+:root {
+  --shadow-none: none;
+  --shadow-floating: 0 4px 16px rgba(12, 47, 16, 0.12);
+  --scrim-modal: rgba(15, 62, 23, 0.32);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}

@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<![CDATA[<helmet>
+  <style>
+/* VITAL webfonts.
+   Faire Octave (display serif) and Suisse Intl (UI sans) are commercially
+   licensed and are NOT shipped here. Per DESIGN.md §2.1 the substitutes are
+   authoritative for all prototyping and pilot work:
+     Faire Octave -> Cormorant Garamond 300
+     Suisse Intl  -> Inter 400/500/600
+   Both are served from Google Fonts. If licensed binaries become available,
+   drop them in assets/fonts/ and replace the @import below with @font-face
+   rules pointing at them; keep the family names in tokens/typography.css. */
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@400;500;600&display=swap");
+
+/* VITAL color — DESIGN.md §1. Light theme only; dark mode is out of scope. */
+:root {
+  /* Foundation */
+  --color-forest-ink: #0f3e17;
+  --color-forest-shadow: #0c2f10;
+  --color-sage-mist: #b1dbb8;
+  --color-keylime-wash: #e1f4df;
+  --color-mint-veil: #cfe7d3;
+  --color-slate-hush: #b6ced5;
+  --color-cream-paper: #fffefc;
+  --color-charcoal: #222222;
+
+  /* Neutrals */
+  --color-charcoal-muted: #6b6b6b;
+  --color-border-strong: #c2bfb6;
+  --color-border-input: #8f8c84;
+  --color-disabled-ink: #8f8c84;
+  --color-border-mist: #efeeeb; /* decorative hairlines only — 1.15:1 */
+
+  /* Semantic status — locked meanings, never decorative */
+  --color-clay-alert: #8c2f2a;
+  --color-clay-wash: #f5e3e1;
+  --color-amber-hold: #8a5a12;
+  --color-amber-wash: #f7edd9;
+
+  --color-focus: #0f3e17;
+  --scrim: rgba(15, 62, 23, 0.32);
+
+  /* Semantic aliases */
+  --text-primary: var(--color-charcoal);
+  --text-heading: var(--color-forest-ink);
+  --text-muted: var(--color-charcoal-muted);
+  --text-inverse: var(--color-cream-paper);
+  --text-disabled: var(--color-disabled-ink);
+  --text-link: var(--color-forest-ink);
+
+  --surface-page: var(--color-cream-paper);
+  --surface-card: var(--color-cream-paper);
+  --surface-tint-1: var(--color-keylime-wash);
+  --surface-tint-2: var(--color-mint-veil);
+  --surface-tint-3: var(--color-sage-mist);
+  --surface-counter: var(--color-slate-hush);
+  --surface-inverse: var(--color-forest-ink);
+
+  --border-divider: var(--color-border-strong);
+  --border-control: var(--color-border-input);
+  --border-hairline: var(--color-border-mist);
+
+  --action-primary: var(--color-forest-ink);
+  --action-primary-hover: var(--color-forest-shadow);
+  --action-destructive: var(--color-clay-alert);
+
+  /* Status groups — DESIGN.md §6.1 */
+  --status-waiting-fill: var(--color-border-mist);
+  --status-waiting-ink: var(--color-charcoal-muted);
+  --status-progress-fill: var(--color-slate-hush);
+  --status-progress-ink: var(--color-forest-ink);
+  --status-done-fill: var(--color-forest-ink);
+  --status-done-ink: var(--color-cream-paper);
+  --status-fail-fill: var(--color-clay-wash);
+  --status-fail-ink: var(--color-clay-alert);
+  --status-attention-fill: var(--color-amber-wash);
+  --status-attention-ink: var(--color-amber-hold);
+}
+
+/* VITAL typography — DESIGN.md §2. Serif is wallet + deck only, never portals. */
+:root {
+  --font-serif-display: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-serif-display);
+
+  --text-caption: 12px;      --leading-caption: 1.5;
+  --text-body-sm: 14px;      --leading-body-sm: 1.5;
+  --text-body: 16px;         --leading-body: 1.5;
+  --text-subheading: 18px;   --leading-subheading: 1.4;
+  --text-heading-sm: 20px;   --leading-heading-sm: 1.35;
+  --text-heading-md: 24px;   --leading-heading-md: 1.3;
+  --text-heading-lg: 32px;   --leading-heading-lg: 1.2;
+  --text-display: 48px;      --leading-display: 1.1;
+
+  --tracking-heading: -0.01em;
+  --tracking-heading-lg: -0.02em;
+  --tracking-display: -0.03em;
+  --tracking-column-header: 0.06em;
+
+  --font-weight-light: 300;   /* serif only */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Semantic aliases */
+  --type-portal-body: var(--text-body-sm);  /* 14px is the portal default */
+  --type-wallet-body: var(--text-body);     /* 16px is the wallet default */
+}
+
+/* Every timestamp, referral ID, patient ID and count — DESIGN.md §2.4 */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* The single permitted uppercase — table column headers, DESIGN.md §2.5 */
+.column-header {
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-column-header);
+  text-transform: uppercase;
+  color: var(--color-charcoal-muted);
+}
+
+/* VITAL spacing, shape, density and targets — DESIGN.md §3. */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-badge: 999px;
+  --radius-icon: 4px;
+
+  /* Comfortable — wallet, deck */
+  --card-padding-comfortable: 24px;
+  --row-height-comfortable: 56px;
+  --gap-comfortable: 16px;
+  --section-gap-comfortable: 48px;
+
+  /* Compact — RHU and laboratory portals */
+  --card-padding-compact: 16px;
+  --row-height-compact: 40px;
+  --gap-compact: 12px;
+  --section-gap-compact: 24px;
+
+  /* Targets */
+  --target-touch: 48px;    /* wallet, mobile */
+  --target-control: 40px;  /* portal controls */
+  --target-icon: 32px;     /* portal icon-only buttons */
+
+  /* Layout */
+  --gutter-portal: 24px;
+  --gutter-wallet: 16px;
+  --max-width-marketing: 1200px;
+}
+
+/* Density scopes — set on a surface root, components read the resolved vars. */
+[data-density="comfortable"] {
+  --card-padding: var(--card-padding-comfortable);
+  --row-height: var(--row-height-comfortable);
+  --gap: var(--gap-comfortable);
+  --section-gap: var(--section-gap-comfortable);
+}
+[data-density="compact"] {
+  --card-padding: var(--card-padding-compact);
+  --row-height: var(--row-height-compact);
+  --gap: var(--gap-compact);
+  --section-gap: var(--section-gap-compact);
+}
+
+/* VITAL elevation — DESIGN.md §4. Default is shadowless; depth is tinted
+   surface layering (cream -> keylime -> mint -> sage -> slate).
+   Shadows exist for exactly three surfaces: dialog, bottom sheet / dropdown,
+   toast. Nothing else in the system casts one. */
+:root {
+  --shadow-none: none;
+  --shadow-floating: 0 4px 16px rgba(12, 47, 16, 0.12);
+  --scrim-modal: rgba(15, 62, 23, 0.32);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+/* Minimal, opinion-free base so consumers inherit the brand defaults. */
+body {
+  margin: 0;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, h5, h6 { color: var(--text-heading); font-weight: var(--font-weight-semibold); margin: 0; }
+a { color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--action-primary-hover); }
+:focus-visible { outline: var(--focus-ring-width) solid var(--color-focus); outline-offset: var(--focus-ring-offset); }
+  </style>
+  <script>
+/* VITAL seed data — synthetic. Invented people, real Bohol geography.
+   v0.2: the tracked object is an Appointment (origin + scheduled slot). */
+(function () {
+  const RHU = 'Loon Rural Health Unit';
+  const RHU_STAFF = 'J. Bacarro';
+  const LAB_STAFF = {
+    'Tagbilaran Diagnostic Center': 'R. Piezas',
+    'Dauis Bayview Laboratory': 'C. Olaivar',
+    'Panglao Island Medical Lab': 'M. Sumampong',
+    'Loon Heritage Clinical Lab': 'E. Bughao',
+    'Baclayon Parish Diagnostics': 'N. Talisic',
+    'Loboc Riverside Laboratory': 'V. Auxtero',
+  };
+
+  const LABS = Object.keys(LAB_STAFF);
+
+  /* Whether a test typically needs a provider decision. The binding rule is per facility
+     (referralTests below), declared by the facility at registration. */
+  const TEST_META = [
+    { name: 'CBC', long: 'Complete blood count', needsReferral: false },
+    { name: 'Fasting blood sugar', long: 'Fasting blood sugar', needsReferral: false },
+    { name: 'Urinalysis', long: 'Urinalysis', needsReferral: false },
+    { name: 'Chest X-ray', long: 'Chest X-ray', needsReferral: true },
+    { name: 'Rabies vaccination', long: 'Rabies vaccination', needsReferral: false },
+    { name: 'Lipid profile', long: 'Lipid profile', needsReferral: false },
+    { name: 'Sputum smear', long: 'Sputum smear', needsReferral: true },
+    { name: 'Pregnancy test', long: 'Pregnancy test', needsReferral: false },
+  ];
+  const TESTS = TEST_META.map(t => t.name);
+
+  /* Capability flags decide behaviour. Type is a display and licensing label only, and no
+     longer selects a portal: a clinic may refer out, receive, or both. */
+  const CAPABILITIES = {
+    'Loon Rural Health Unit':       { type: 'RHU / health centre',   canRefer: true,  canReceive: false },
+    'Tagbilaran Diagnostic Center': { type: 'Clinic',                canRefer: true,  canReceive: true  },
+    'Dauis Bayview Laboratory':     { type: 'Standalone laboratory', canRefer: false, canReceive: true  },
+    'Baclayon Parish Diagnostics':  { type: 'Clinic',                canRefer: false, canReceive: true  },
+    'Panglao Island Medical Lab':   { type: 'Standalone laboratory', canRefer: false, canReceive: true  },
+    'Loon Heritage Clinical Lab':   { type: 'Standalone laboratory', canRefer: false, canReceive: true  },
+    'Loboc Riverside Laboratory':   { type: 'Standalone laboratory', canRefer: false, canReceive: true  },
+  };
+  function capabilitiesOf(name) {
+    return CAPABILITIES[name] || { type: 'Standalone laboratory', canRefer: false, canReceive: true };
+  }
+
+  /* Test coverage per facility, plus disclosed subscription tier (brief §3). */
+  const FACILITIES = [
+    { name: 'Tagbilaran Diagnostic Center', municipality: 'Tagbilaran', travel: '35 min by van', partner: true,
+      coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Chest X-ray', 'Lipid profile', 'Sputum smear', 'Pregnancy test'],
+      referralTests: ['Chest X-ray', 'Sputum smear'] },
+    { name: 'Dauis Bayview Laboratory', municipality: 'Dauis', travel: '40 min by van', partner: false,
+      coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Chest X-ray', 'Lipid profile'],
+      referralTests: ['Chest X-ray'] },
+    { name: 'Baclayon Parish Diagnostics', municipality: 'Baclayon', travel: '50 min by van', partner: false,
+      coverage: ['CBC', 'Urinalysis', 'Chest X-ray', 'Sputum smear'],
+      referralTests: ['Sputum smear'] },
+    { name: 'Panglao Island Medical Lab', municipality: 'Panglao', travel: '1 hr 5 min by van', partner: true,
+      coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Rabies vaccination', 'Pregnancy test'],
+      referralTests: [] },
+    { name: 'Loon Heritage Clinical Lab', municipality: 'Loon', travel: '10 min on foot', partner: false,
+      coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Pregnancy test'],
+      referralTests: [] },
+    { name: 'Loboc Riverside Laboratory', municipality: 'Loboc', travel: '1 hr 20 min by van', partner: true,
+      coverage: ['Fasting blood sugar', 'Urinalysis', 'Rabies vaccination'],
+      referralTests: [] },
+  ];
+
+  /* Each receiving facility publishes its own day schedule. This is the single source of slot
+     data: L6 renders it, and P7 and R2 may only offer slots drawn from it. Still static —
+     no capacity engine, no conflict resolution (brief §1.3). */
+  const SCHEDULE = {
+    'Tagbilaran Diagnostic Center': [
+      { day: 'Wed 16 Sep', times: ['07:30', '08:00', '09:30', '13:00', '14:30'] },
+      { day: 'Thu 17 Sep', times: ['07:30', '10:00', '11:00', '15:00'] },
+      { day: 'Fri 18 Sep', times: ['08:30', '09:00', '13:30'] },
+    ],
+    'Dauis Bayview Laboratory': [
+      { day: 'Wed 16 Sep', times: ['08:00', '09:00', '10:30'] },
+      { day: 'Thu 17 Sep', times: ['08:00', '13:30', '14:00'] },
+      { day: 'Fri 18 Sep', times: ['09:30', '11:00'] },
+    ],
+    'Baclayon Parish Diagnostics': [
+      { day: 'Thu 17 Sep', times: ['09:00', '10:00'] },
+      { day: 'Fri 18 Sep', times: ['08:00', '08:30', '13:00'] },
+    ],
+    'Panglao Island Medical Lab': [
+      { day: 'Wed 16 Sep', times: ['08:30', '11:30'] },
+      { day: 'Thu 17 Sep', times: ['07:00', '09:30', '14:00', '15:30'] },
+      { day: 'Fri 18 Sep', times: ['10:00', '13:00'] },
+    ],
+    'Loon Heritage Clinical Lab': [
+      { day: 'Wed 16 Sep', times: ['07:00', '07:30', '08:00', '10:00'] },
+      { day: 'Thu 17 Sep', times: ['07:00', '08:30', '13:00'] },
+      { day: 'Fri 18 Sep', times: ['07:30', '09:00', '14:00'] },
+    ],
+    'Loboc Riverside Laboratory': [
+      { day: 'Thu 17 Sep', times: ['09:00', '13:30'] },
+      { day: 'Fri 18 Sep', times: ['08:00', '10:30', '15:00'] },
+    ],
+  };
+  function slotsFor(facility) { return SCHEDULE[facility] || []; }
+  /* Slot labels on an appointment read "16 Sep · 08:00"; the schedule carries the weekday. */
+  function slotLabels(facility) {
+    const out = [];
+    slotsFor(facility).forEach(d => d.times.forEach(t => out.push(d.day.replace(/^\S+ /, '') + ' · ' + t)));
+    return out;
+  }
+  /* The alternative a facility offers when it proposes a new time — its own next published slot. */
+  function proposedSlotFor(facility, currentSlot) {
+    const flat = slotLabels(facility);
+    return flat.find(s => s !== currentSlot) || flat[0] || '';
+  }
+  /* A patient has 48 hours to answer a proposed time before it returns to the facility. */
+  const RESPOND_WINDOW = 2880;
+  function countdown(minsLeft) {
+    if (minsLeft <= 0) return 'No response — returned to the facility';
+    if (minsLeft < 60) return minsLeft + ' minutes left to respond';
+    const h = Math.round(minsLeft / 60);
+    return h + (h === 1 ? ' hour left to respond' : ' hours left to respond');
+  }
+
+  const REFERRED_PATH = ['Created', 'Sent', 'Received', 'Accepted', 'Patient arrived', 'Endorsed', 'Completed'];
+  const PERSONAL_PATH = ['Booked', 'Received', 'Accepted', 'Patient arrived', 'Endorsed', 'Completed'];
+  const ACTOR_OF = {
+    Created: 'rhu', Sent: 'rhu', Booked: 'patient', Received: 'lab', Accepted: 'lab',
+    Declined: 'lab', 'Patient arrived': 'lab', 'No-show': 'lab', Endorsed: 'lab',
+    'Result voided': 'lab', 'Consent revoked': 'patient', 'Reschedule proposed': 'lab',
+  };
+
+  /* Overdue is derived from the row, never written to the trail (brief §2.2). */
+  function trailFor(status, lab, patient, startMinutes, origin, referrer) {
+    const FROM = referrer || RHU;
+    const FROM_STAFF = referrer ? LAB_STAFF[referrer] : RHU_STAFF;
+    const PATH = origin === 'Personal' ? PERSONAL_PATH : REFERRED_PATH;
+    const head = PATH.slice(0, PATH.indexOf('Received'));
+    let chain;
+    if (status === 'Declined') chain = head.concat(['Received', 'Declined']);
+    else if (status === 'No-show') chain = head.concat(['Received', 'Accepted', 'No-show']);
+    else if (status === 'Overdue') chain = head.concat(['Received', 'Accepted']);
+    else if (status === 'Reschedule proposed') chain = head.concat(['Received', 'Reschedule proposed']);
+    else if (status === 'Consent revoked') chain = head.concat(['Received', 'Consent revoked']);
+    else if (status === 'Result voided') chain = head.concat(['Received', 'Accepted', 'Patient arrived', 'Endorsed', 'Result voided']);
+    else chain = PATH.slice(0, PATH.indexOf(status) + 1);
+    const step = startMinutes / (chain.length + 1);
+    return chain.map((s, i) => {
+      const t = Math.round(startMinutes - i * step);
+      /* Completed is the RHU's acknowledgement when referred, the patient's when personal. */
+      const who = s === 'Completed' ? (origin === 'Personal' ? 'patient' : 'rhu') : ACTOR_OF[s];
+      return {
+        status: s,
+        _m: t,
+        at: stamp(t),
+        actor: who === 'rhu' ? FROM_STAFF : who === 'lab' ? LAB_STAFF[lab] : patient.split(', ').reverse().join(' '),
+        facility: who === 'rhu' ? FROM : who === 'lab' ? lab : 'Health wallet',
+      };
+    });
+  }
+
+  /* Minutes before 15 Sep 2026 09:41 → "13 Sep · 14:29". Negative minutes are in the future. */
+  function stamp(minutesBefore) {
+    const base = new Date(2026, 8, 15, 9, 41);
+    const d = new Date(base.getTime() - minutesBefore * 60000);
+    const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getDate()) + ' ' + mon + ' · ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  /* Booked slots sit on the half hour, so they are rounded off the running clock. */
+  function slotDate(minutesBefore) {
+    const base = new Date(2026, 8, 15, 9, 41);
+    const d = new Date(base.getTime() - minutesBefore * 60000);
+    d.setMinutes(d.getMinutes() - (d.getMinutes() % 30), 0, 0);
+    /* Laboratories open 07:00-16:00, so slots are folded into opening hours. */
+    const h = d.getHours();
+    if (h < 7 || h > 16) d.setHours(7 + (h % 10));
+    return d;
+  }
+  function clock(minutesBefore) {
+    const d = slotDate(minutesBefore);
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function slotStamp(minutesBefore) {
+    const d = slotDate(minutesBefore);
+    const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getDate()) + ' ' + mon + ' · ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  const PEOPLE = [
+    ['Abdon, Maricel', 'PH-4409-1182', 34, 'F', 'Loon'],
+    ['Bagatsing, Lorenzo', 'PH-3318-0924', 61, 'M', 'Tagbilaran'],
+    ['Cadapan, Reynaldo', 'PH-7712-4408', 58, 'M', 'Baclayon'],
+    ['Lumandas, Imelda', 'PH-1180-6631', 47, 'F', 'Dauis'],
+    ['Espuerta, Nolan', 'PH-6620-3390', 29, 'M', 'Panglao'],
+    ['Fuentebella, Rosalie', 'PH-2204-7751', 66, 'F', 'Loboc'],
+    ['Hinlo, Teofilo', 'PH-9931-2205', 72, 'M', 'Loon'],
+    ['Inting, Marivic', 'PH-5540-8817', 41, 'F', 'Tagbilaran'],
+    ['Jamisola, Ariel', 'PH-8812-0031', 36, 'M', 'Panglao'],
+    ['Kabiling, Perla', 'PH-3390-6614', 55, 'F', 'Baclayon'],
+    ['Labunog, Efren', 'PH-7743-2298', 63, 'M', 'Loboc'],
+    ['Magallanes, Cristina', 'PH-1129-5583', 38, 'F', 'Dauis'],
+    ['Nazareno, Bienvenido', 'PH-4471-9920', 70, 'M', 'Loon'],
+    ['Oclarit, Jasmin', 'PH-6638-1174', 26, 'F', 'Tagbilaran'],
+    ['Pagulayan, Rodel', 'PH-2285-4406', 49, 'M', 'Panglao'],
+    ['Quirante, Lorna', 'PH-9903-7718', 52, 'F', 'Loon'],
+    ['Racoma, Alfredo', 'PH-5517-3384', 68, 'M', 'Baclayon'],
+    ['Sarabia, Nenita', 'PH-1174-8829', 59, 'F', 'Loboc'],
+    ['Tirambulo, Glenda', 'PH-7796-2241', 44, 'F', 'Dauis'],
+    ['Umbao, Fidel', 'PH-3342-6650', 31, 'M', 'Loon'],
+    ['Valeroso, Marissa', 'PH-8829-1107', 37, 'F', 'Tagbilaran'],
+    ['Wenceslao, Dante', 'PH-4408-5573', 64, 'M', 'Panglao'],
+    ['Ybanez, Corazon', 'PH-6651-9938', 74, 'F', 'Baclayon'],
+    ['Zafra, Melchor', 'PH-2217-4485', 45, 'M', 'Loboc'],
+    ['Amodia, Felisa', 'PH-9938-3306', 57, 'F', 'Dauis'],
+    ['Boteros, Ruben', 'PH-5573-1129', 33, 'M', 'Loon'],
+    ['Casiple, Elvira', 'PH-1107-6642', 48, 'F', 'Tagbilaran'],
+    ['Dumaluan, Arnel', 'PH-7718-2295', 62, 'M', 'Panglao'],
+    ['Empuerto, Luzviminda', 'PH-3384-8816', 51, 'F', 'Baclayon'],
+    ['Garcia-Amper, Dina', 'PH-6614-4471', 39, 'F', 'Loboc'],
+  ].map(([name, id, age, sex, municipality]) => ({ name, id, age, sex, municipality }));
+
+  /* [patientIndex, status, labIndex, [testIndexes], minutesSinceStart, scheduledMinutesBefore, origin, note, referredBy, referrer]
+     Negative scheduledMinutesBefore is a slot still in the future. referrer names the
+     originating facility when it is not the health centre — a clinic with can_refer set. */
+  const SEED = [
+    [3,  'Overdue',          0, [3],    7400, 5880,  'Referred', 'Persistent cough, three weeks. Rule out pulmonary tuberculosis.', null],
+    [1,  'Declined',         1, [1],    36,   -1080, 'Referred', 'Polyuria and weight loss. Baseline glucose needed.', null],
+    [0,  'Patient arrived',  2, [0],    43,   20,    'Referred', 'Pallor and fatigue since July. Anaemia workup.', null],
+    [2,  'Endorsed',         3, [2],    60,   180,   'Referred', 'Dysuria, two days. Suspected urinary tract infection.', null],
+    [4,  'Accepted',         4, [0],    71,   -1380, 'Referred', 'Pre-employment screening, barangay requirement.', null],
+    [5,  'Overdue',          5, [1],    6200, 4560,  'Referred', 'Known diabetic, no reading since March.', null],
+    [6,  'Sent',             0, [3],    106,  -1500, 'Referred', 'Shortness of breath on exertion.', null],
+    [7,  'Created',          1, [2],    117,  -2940, 'Referred', 'Recurrent flank pain.', null],
+    [8,  'Consent revoked',  2, [0],    970,  -420,  'Referred', 'Routine screening.', null],
+    [9,  'Completed',        3, [1],    1003, 660,   'Referred', 'Gestational diabetes screening.', null],
+    [10, 'Received',         4, [2],    1021, -1020, 'Referred', 'Follow-up after antibiotic course.', null],
+    [11, 'Accepted',         5, [3],    1047, -1440, 'Referred', 'Chest pain, atypical. Imaging requested.', null],
+    [12, 'Endorsed',         0, [0],    1074, 720,   'Referred', 'Pre-operative clearance.', null],
+    [13, 'Declined',         1, [3],    1101, -960,  'Referred', 'Cough with fever. Referring for plain film.', null],
+    [14, 'Completed',        2, [2],    1129, 840,   'Referred', 'Haematuria on urine dipstick.', null],
+    [15, 'Booked',           3, [4],    240,  -1260, 'Personal', 'Dog bite on the left calf, two days ago.', 'Dr. Ofelia Carcallas, Loon district clinic'],
+    [16, 'Patient arrived',  4, [1],    1182, 60,    'Referred', 'Diabetic, quarterly monitoring.', null],
+    [17, 'No-show',          5, [2],    5300, 4200,  'Referred', 'Suspected recurrent infection.', null],
+    [18, 'Received',         0, [1, 5], 1253, -900,  'Personal', 'Annual check, no provider decision needed.', null],
+    [19, 'Completed',        1, [0],    1324, 960,   'Referred', 'Fatigue, rule out anaemia.', null],
+    [20, 'Accepted',         2, [3],    1359, -1320, 'Referred', 'Pneumonia follow-up imaging.', null],
+    [21, 'Result voided',    3, [2],    1397, 900,   'Referred', 'Dysuria with frequency.', null],
+    [22, 'Endorsed',         4, [0],    1430, 1020,  'Referred', 'Pre-transfusion baseline.', null],
+    [23, 'Consent revoked',  5, [1],    1709, -480,  'Referred', 'Routine glucose check.', null],
+    [24, 'Completed',        0, [7],    1746, 1140,  'Personal', 'Booked directly from the health wallet.', null],
+    [25, 'Received',         1, [3],    1783, -840,  'Referred', 'Occupational chest screening.', null],
+    [26, 'Booked',           2, [0],    300,  -1200, 'Personal', 'Routine blood count before a job application.', 'Loon Rural Health Unit'],
+    [27, 'Patient arrived',  3, [1],    1872, 90,    'Referred', 'Diabetic foot ulcer, baseline glucose.', null],
+    [28, 'Sent',             4, [6],    1915, -2880, 'Referred', 'Cough and night sweats.', null],
+    [29, 'Accepted',         5, [2],    1963, -1560, 'Referred', 'Suprapubic pain.', null],
+    [0,  'Reschedule proposed', 0, [0, 5], 120,  -2400, 'Personal', 'Booked directly from the health wallet.', null],
+    [2,  'Reschedule proposed', 1, [1],    210,  -1740, 'Referred', 'Known diabetic, quarterly monitoring.', null],
+    /* Referred out by Tagbilaran Diagnostic Center — a clinic that both refers and receives. */
+    [7,  'Sent',              1, [1],    150,  -1320, 'Referred', 'Fasting glucose. We do not run this panel.', null, 'Tagbilaran Diagnostic Center'],
+    [13, 'Endorsed',          4, [4],    400,  -900,  'Referred', 'Rabies vaccination, not stocked here.', null, 'Tagbilaran Diagnostic Center'],
+    [19, 'Completed',         3, [2],    2200, 1500,  'Referred', 'Urinalysis. Analyser down for service.', null, 'Tagbilaran Diagnostic Center'],
+  ];
+
+  const APPOINTMENTS = SEED.map(([pi, status, li, tis, mins, schedMins, origin, note, referredBy, referrer], i) => {
+    const patient = PEOPLE[pi];
+    const lab = LABS[li];
+    const trail = trailFor(status, lab, patient.name, mins, origin, referrer);
+    const latest = trail[trail.length - 1];
+    const tests = tis.map(t => TESTS[t]);
+    return {
+      id: 'APT-' + (412 - i),
+      patient: patient.name,
+      patientId: patient.id,
+      age: patient.age,
+      sex: patient.sex,
+      municipality: patient.municipality,
+      origin,
+      /* Which facility originated the appointment. Null when the patient booked it. */
+      fromFacility: origin === 'Personal' ? null : (referrer || RHU),
+      referredBy: referredBy || null,
+      lab,
+      labStaff: LAB_STAFF[lab],
+      tests,
+      test: tests.join(', '),
+      scheduledAt: slotStamp(schedMins),
+      scheduledTime: clock(schedMins),
+      scheduledPast: schedMins > 0,
+      schedMins,
+      note,
+      status,
+      updated: latest.at,
+      created: trail[0].at,
+      expectedBy: slotStamp(schedMins),
+      declineReason: status === 'Declined'
+        ? (i === 1
+          ? 'Analyser reagent out of stock until 18 September. Refer the patient to another partner laboratory.'
+          : 'Radiology unit closed for maintenance until 18 September. Your health centre has been told and will arrange another facility.')
+        : null,
+      proposedSlot: status === 'Reschedule proposed' ? proposedSlotFor(lab, slotStamp(schedMins)) : null,
+      proposedAt: status === 'Reschedule proposed' ? latest.at : null,
+      respondMinsLeft: status === 'Reschedule proposed' ? Math.max(0, RESPOND_WINDOW - mins) : null,
+      respondCountdown: status === 'Reschedule proposed' ? countdown(Math.max(0, RESPOND_WINDOW - mins)) : null,
+      rescheduleReason: status === 'Reschedule proposed'
+        ? 'The time you chose is no longer open at this facility.'
+        : null,
+      result: ['Endorsed', 'Completed', 'Result voided'].includes(status)
+        ? { file: 'result-' + (412 - i) + '.pdf', size: '148 KB', released: latest.at, by: LAB_STAFF[lab], voided: status === 'Result voided' }
+        : null,
+      trail,
+    };
+  });
+
+  const WALLET_PATIENT = PEOPLE[0];
+
+  /* Patient-entered, never computed or interpreted by VITAL (brief §5). */
+  const PROFILE = [
+    { label: 'Age', value: '34 years', updated: '02 Feb 2026' },
+    { label: 'Sex', value: 'Female', updated: '02 Feb 2026' },
+    { label: 'Height', value: '1.55 m', updated: '02 Feb 2026' },
+    { label: 'Weight', value: '58 kg', updated: '04 Aug 2026' },
+    { label: 'Blood type', value: 'O+', updated: '02 Feb 2026' },
+    { label: 'Allergies', value: 'Penicillin', updated: '11 Jun 2026' },
+  ];
+
+  const CONSENTS = [
+    { facility: 'Loon Rural Health Unit', kind: 'Referring provider', referralId: null, scope: 'Appointments and results you send through this health centre', granted: '02 Feb · 09:14', until: 'No end date', active: true },
+    { facility: 'Panglao Island Medical Lab', kind: 'Receiving facility', referralId: 'APT-410', scope: 'One appointment — CBC, APT-410', granted: '14 Sep · 08:12', until: 'When this appointment closes', active: true },
+    { facility: 'Loon Heritage Clinical Lab', kind: 'Receiving facility', referralId: 'APT-403', scope: 'One appointment — fasting blood sugar, APT-403', granted: '11 Sep · 10:02', until: 'Closed 13 Sep', active: false },
+  ];
+
+  const DOCUMENTS = [
+    { name: 'Urinalysis result', facility: 'Loon Heritage Clinical Lab', date: '13 Sep · 16:22', kind: 'Result', voided: false },
+    { name: 'Fasting blood sugar result', facility: 'Loon Heritage Clinical Lab', date: '11 Sep · 14:05', kind: 'Result', voided: false },
+    { name: 'Complete blood count result', facility: 'Tagbilaran Diagnostic Center', date: '28 Aug · 11:41', kind: 'Result', voided: true },
+    { name: 'Complete blood count result', facility: 'Tagbilaran Diagnostic Center', date: '28 Aug · 15:09', kind: 'Result', voided: false },
+  ];
+
+  /* Two bands, tier orders within a band only — never across it (brief §3.2).
+     A test is bookable at a facility when the facility offers it and does not require a
+     referral for it. One or more bookable tests and the row books; zero and it is disabled.
+     A referral requirement therefore never disables a row on its own. */
+  function rankFacilities(selected) {
+    const picked = selected && selected.length ? selected : [];
+    return FACILITIES
+      .map(f => {
+        const missing = picked.filter(t => !f.coverage.includes(t));
+        /* Tests this facility performs but only accepts with an RHU referral — declared at registration. */
+        const referralOnly = picked.filter(t => f.coverage.includes(t) && (f.referralTests || []).includes(t));
+        const bookable = picked.filter(t => f.coverage.includes(t) && !(f.referralTests || []).includes(t));
+        return {
+          ...f, missing, referralOnly, bookable,
+          blocked: picked.length > 0 && bookable.length === 0,
+          full: missing.length === 0,
+          have: picked.length - missing.length,
+        };
+      })
+      .filter(f => picked.length === 0 || f.have > 0)
+      .sort((a, b) =>
+        (a.full === b.full ? 0 : a.full ? -1 : 1) ||
+        (b.have - a.have) ||
+        (a.partner === b.partner ? 0 : a.partner ? -1 : 1));
+  }
+
+  /* Staff accounts. A user belongs to exactly one facility; there is no cross-facility login. */
+  const USERS = [{ name: RHU_STAFF, facility: RHU, role: 'Health centre staff' }].concat(
+    LABS.map(f => ({
+      name: LAB_STAFF[f],
+      facility: f,
+      role: capabilitiesOf(f).canRefer ? 'Clinic staff' : 'Laboratory staff',
+    })));
+
+  /* Every trail entry on every appointment, flattened. The trail rendered on a detail screen
+     and this list are the same records — not two sources. */
+  const STATUS_EVENTS = APPOINTMENTS.reduce((acc, a) => acc.concat(
+    a.trail.map(ev => ({
+      appointmentId: a.id, status: ev.status, at: ev.at, minutesBefore: ev._m,
+      actor: ev.actor, facility: ev.facility,
+    }))), []);
+
+  /* Only six transitions plus one 24-hour reminder reach the patient (brief §7). */
+  function notificationsFor(appointments) {
+    const out = [];
+    const push = (mins, kind, message, id) => { if (mins >= 0) out.push({ mins, at: stamp(mins), kind, message, appointmentId: id }); };
+    appointments.forEach(r => {
+      const day = (r.scheduledAt || '').split(' · ')[0];
+      const time = (r.scheduledAt || '').split(' · ')[1];
+      r.trail.forEach(ev => {
+        if (ev.status === 'Created' && r.origin === 'Referred') push(ev._m, 'Scheduled', RHU + ' scheduled an appointment for you on ' + day + '.', r.id);
+        if (ev.status === 'Reschedule proposed') push(ev._m, 'New time proposed', r.lab + ' proposed a new time for your appointment: ' + r.proposedSlot + '.', r.id);
+        if (ev.status === 'Accepted') push(ev._m, 'Confirmed', r.lab + ' confirmed your appointment.', r.id);
+        if (ev.status === 'Declined') push(ev._m, 'Declined', r.lab + ' couldn’t accept your appointment. Choose another facility.', r.id);
+        if (ev.status === 'Endorsed') push(ev._m, 'Result ready', 'Your result from ' + r.lab + ' is ready to view.', r.id);
+        if (ev.status === 'Consent revoked') push(ev._m, 'Access changed', 'You’ve removed ' + r.lab + '’s access.', r.id);
+      });
+      if (typeof r.schedMins === 'number' && !['Declined', 'No-show', 'Consent revoked', 'Completed'].includes(r.status)) {
+        push(r.schedMins + 1440, 'Reminder', 'Reminder: your appointment at ' + r.lab + ' is tomorrow at ' + time + '.', r.id);
+      }
+    });
+    return out.sort((a, b) => a.mins - b.mins);
+  }
+  const NOTIFICATIONS = notificationsFor(APPOINTMENTS.filter(a => a.patientId === PEOPLE[0].id));
+
+  window.VITAL_FIXTURE = {
+    RHU, RHU_STAFF, LABS, TESTS, TEST_META, FACILITIES, LAB_STAFF, PEOPLE,
+    CAPABILITIES, capabilitiesOf, SCHEDULE, slotsFor, slotLabels, proposedSlotFor,
+    RESPOND_WINDOW, countdown,
+    APPOINTMENTS, REFERRALS: APPOINTMENTS, CONSENTS, DOCUMENTS, PROFILE,
+    WALLET_PATIENT, stamp, clock, slotStamp, trailFor, rankFacilities,
+    USERS, STATUS_EVENTS, NOTIFICATIONS, notificationsFor,
+    /* Canonical collection names. Same objects as above, not copies. */
+    patients: PEOPLE, facilities: FACILITIES, users: USERS, appointments: APPOINTMENTS,
+    status_events: STATUS_EVENTS, documents: DOCUMENTS, consent_grants: CONSENTS,
+    published_slots: SCHEDULE, notifications: NOTIFICATIONS, tests: TEST_META,
+    SLOTS: slotsFor('Tagbilaran Diagnostic Center'),
+    LAB_SIGNED_IN: 'Tagbilaran Diagnostic Center',
+  };
+})();
+  </script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
+  <style>
+    body { margin: 0; background: var(--color-mint-veil); }
+    a { color: var(--color-forest-ink); }
+    a:hover { color: var(--color-forest-shadow); }
+    *:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+    .ms { font-family: 'Material Symbols Rounded'; font-weight: normal; font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
+  </style>
+</helmet>
+<div style="min-height:100vh;background:var(--color-mint-veil);font-family:var(--font-sans);color:var(--color-charcoal);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;align-items:center;gap:16px;padding:24px 16px 48px">
+
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center">
+    <span style="font-size:12px;color:var(--color-forest-ink)">Prototype screens</span>
+    <sc-for list="{{ screens }}" as="s" hint-placeholder-count="6">
+      <button type="button" onClick="{{ s.go }}" style="height:32px;padding:0 12px;border-radius:999px;border:1px solid {{ s.border }};background:{{ s.bg }};color:{{ s.ink }};font-family:var(--font-sans);font-size:12px;font-weight:{{ s.weight }};cursor:pointer">{{ s.label }}</button>
+    </sc-for>
+  </div>
+
+  <div data-density="comfortable" style="width:390px;max-width:100%;min-height:780px;background:var(--color-cream-paper);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;font-size:16px;line-height:1.55">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px 0;font-size:12px;color:var(--color-charcoal-muted);font-variant-numeric:tabular-nums">
+      <span>09:41</span>
+      <span style="display:flex;gap:6px"><span class="ms" style="font-size:14px">signal_cellular_alt</span><span class="ms" style="font-size:14px">wifi</span><span class="ms" style="font-size:14px">battery_full</span></span>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 20px 0">
+      <span style="font-size:13px;font-weight:600;letter-spacing:0.14em;color:var(--color-forest-ink)">VITAL</span>
+      <sc-if value="{{ showStep }}" hint-placeholder-val="{{ false }}">
+        <span style="margin-left:auto;font-size:12px;color:var(--color-charcoal-muted);font-variant-numeric:tabular-nums">{{ stepLabel }}</span>
+      </sc-if>
+    </div>
+
+    <div style="flex:1;padding:16px 16px 32px;display:flex;flex-direction:column;gap:24px">
+
+      <sc-if value="{{ isW1 }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:24px;flex:1">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;letter-spacing:0.01em;color:var(--color-forest-ink)">Your health record, in your hands</h1>
+            <p style="margin:0;font-size:16px">VITAL keeps your appointments and results in one place on your phone, and lets you decide which health centres and laboratories can read them.</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <sc-for list="{{ welcomePoints }}" as="p" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:16px;align-items:start">
+                <span class="ms" style="font-size:24px;color:var(--color-forest-ink)">{{ p.icon }}</span>
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <span style="font-weight:600">{{ p.title }}</span>
+                  <span style="font-size:16px">{{ p.body }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:12px">
+            <button type="button" onClick="{{ startDirect }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:var(--color-forest-ink);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:pointer">Get started</button>
+            <button type="button" onClick="{{ startInvited }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:transparent;color:var(--color-forest-ink);font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:pointer">I have an invite</button>
+            <span style="font-size:12px;color:var(--color-charcoal-muted);text-align:center">You need a mobile number that can receive a text message.</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isW2 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px;flex:1">
+          <button type="button" onClick="{{ back }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 12px 0 4px;border:0;background:transparent;font-family:var(--font-sans);font-size:16px;color:var(--color-forest-ink);cursor:pointer"><span class="ms" style="font-size:24px">chevron_left</span>Back</button>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">What is your mobile number?</h1>
+            <p style="margin:0;font-size:16px">{{ phoneLead }}</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:14px;color:var(--color-charcoal-muted)">Mobile number</span>
+            <div style="display:flex;align-items:center;gap:8px;border:1px solid var(--color-border-input);border-radius:var(--radius-control);padding:0 12px;min-height:56px">
+              <span style="font-size:16px;font-variant-numeric:tabular-nums;color:var(--color-charcoal)">+63</span>
+              <input type="tel" inputmode="numeric" value="{{ phoneText }}" onInput="{{ setPhone }}" placeholder="9XX XXX XXXX" aria-label="Mobile number" style="flex:1;min-width:0;border:0;background:transparent;font-family:var(--font-sans);font-size:20px;font-variant-numeric:tabular-nums;color:var(--color-charcoal);outline:none">
+            </div>
+            <span style="font-size:14px;color:{{ phoneHintHue }}">{{ phoneHint }}</span>
+          </div>
+
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:12px">
+            <button type="button" onClick="{{ sendCode }}" disabled="{{ phoneBtn.blocked }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid {{ phoneBtn.border }};background:{{ phoneBtn.bg }};color:{{ phoneBtn.ink }};font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:{{ phoneBtn.cursor }}">Send me a code</button>
+            <span style="font-size:12px;color:var(--color-charcoal-muted)">Your number is how VITAL knows the record is yours. It is not shown to other patients.</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isW3 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px;flex:1">
+          <button type="button" onClick="{{ back }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 12px 0 4px;border:0;background:transparent;font-family:var(--font-sans);font-size:16px;color:var(--color-forest-ink);cursor:pointer"><span class="ms" style="font-size:24px">chevron_left</span>Change number</button>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">Enter the code we texted you</h1>
+            <p style="margin:0;font-size:16px">Sent to {{ phonePretty }}. It is six digits.</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;gap:8px">
+              <sc-for list="{{ otpBoxes }}" as="b" hint-placeholder-count="6">
+                <input type="tel" inputmode="numeric" maxlength="1" value="{{ b.value }}" onInput="{{ b.set }}" aria-label="{{ b.label }}" style="width:100%;min-width:0;height:64px;text-align:center;border:1px solid {{ otpBorder }};border-radius:var(--radius-control);background:var(--color-cream-paper);font-family:var(--font-sans);font-size:24px;font-variant-numeric:tabular-nums;color:var(--color-charcoal)">
+              </sc-for>
+            </div>
+            <span style="font-size:14px;color:{{ otpHintHue }}">{{ otpHint }}</span>
+          </div>
+
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:12px">
+            <button type="button" onClick="{{ verifyCode }}" disabled="{{ otpBtn.blocked }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid {{ otpBtn.border }};background:{{ otpBtn.bg }};color:{{ otpBtn.ink }};font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:{{ otpBtn.cursor }}">Verify my number</button>
+            <sc-if value="{{ canResend }}" hint-placeholder-val="{{ false }}">
+              <button type="button" onClick="{{ resend }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:transparent;color:var(--color-forest-ink);font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:pointer">Send a new code</button>
+            </sc-if>
+            <sc-if value="{{ waitingResend }}" hint-placeholder-val="{{ true }}">
+              <span style="font-size:14px;color:var(--color-charcoal-muted);text-align:center;font-variant-numeric:tabular-nums">{{ resendLabel }}</span>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isW4 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px;flex:1">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">Your details</h1>
+            <p style="margin:0;font-size:16px">A health centre uses these to be sure a record belongs to you. You can change them later.</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <label style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:14px;color:var(--color-charcoal-muted)">Full name</span>
+              <input type="text" value="{{ details.name }}" onInput="{{ setName }}" placeholder="First name and family name" style="min-height:56px;padding:0 12px;border:1px solid var(--color-border-input);border-radius:var(--radius-control);background:var(--color-cream-paper);font-family:var(--font-sans);font-size:16px;color:var(--color-charcoal)">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:14px;color:var(--color-charcoal-muted)">Date of birth</span>
+              <input type="date" value="{{ details.dob }}" onInput="{{ setDob }}" style="min-height:56px;padding:0 12px;border:1px solid var(--color-border-input);border-radius:var(--radius-control);background:var(--color-cream-paper);font-family:var(--font-sans);font-size:16px;font-variant-numeric:tabular-nums;color:var(--color-charcoal)">
+            </label>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-size:14px;color:var(--color-charcoal-muted)">Sex</span>
+              <div style="display:flex;gap:8px">
+                <sc-for list="{{ sexOptions }}" as="o" hint-placeholder-count="2">
+                  <button type="button" onClick="{{ o.pick }}" aria-pressed="{{ o.on }}" style="flex:1;min-height:48px;border-radius:var(--radius-control);border:1px solid {{ o.border }};background:{{ o.bg }};color:var(--color-forest-ink);font-family:var(--font-sans);font-size:16px;font-weight:{{ o.weight }};cursor:pointer">{{ o.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:12px">
+            <button type="button" onClick="{{ toConsent }}" disabled="{{ detailsBtn.blocked }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid {{ detailsBtn.border }};background:{{ detailsBtn.bg }};color:{{ detailsBtn.ink }};font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:{{ detailsBtn.cursor }}">Continue</button>
+            <span style="font-size:12px;color:var(--color-charcoal-muted)">{{ detailsHint }}</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isW5 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px;flex:1">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">Before you start</h1>
+            <p style="margin:0;font-size:16px">Read this and accept it if you agree. Nothing is ticked for you.</p>
+          </div>
+
+          <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:16px">
+            <sc-for list="{{ privacyPoints }}" as="p" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:16px;align-items:start">
+                <span class="ms" style="font-size:24px;color:var(--color-forest-ink)">{{ p.icon }}</span>
+                <span style="font-size:16px">{{ p.body }}</span>
+              </div>
+            </sc-for>
+            <span style="font-size:14px;color:var(--color-charcoal-muted)">This notice is given under the Data Privacy Act of 2012. You can read the full notice at any time from your wallet settings.</span>
+          </div>
+
+          <label style="display:flex;gap:16px;align-items:flex-start;cursor:pointer">
+            <input type="checkbox" checked="{{ consentTicked }}" onChange="{{ setConsent }}" style="width:24px;height:24px;margin:2px 0 0;accent-color:var(--color-forest-ink)">
+            <span style="font-size:16px">I have read this notice and I agree that VITAL may store my appointments, results and the details I enter, and share them only with the facilities I allow.</span>
+          </label>
+
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:12px">
+            <button type="button" onClick="{{ finish }}" disabled="{{ consentBtn.blocked }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid {{ consentBtn.border }};background:{{ consentBtn.bg }};color:{{ consentBtn.ink }};font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:{{ consentBtn.cursor }}">Accept and open my wallet</button>
+            <span style="font-size:12px;color:var(--color-charcoal-muted)">{{ consentHint }}</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isW6 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px;flex:1">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">An appointment is waiting for you</h1>
+            <p style="margin:0;font-size:16px">Loon Rural Health Unit booked this for the number you just verified, {{ phonePretty }}.</p>
+          </div>
+
+          <div style="border:1px solid var(--color-border-strong);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:16px">
+            <span style="display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:4px 12px;border-radius:var(--radius-badge);font-size:12px;font-weight:500;background:var(--status-waiting-fill);color:var(--status-waiting-ink)"><span class="ms" style="font-size:16px">send</span>Sent to the laboratory</span>
+            <div style="display:flex;flex-direction:column;gap:12px;font-size:16px">
+              <sc-for list="{{ claim }}" as="c" hint-placeholder-count="5">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <span style="font-size:14px;color:var(--color-charcoal-muted)">{{ c.label }}</span>
+                  <span style="font-variant-numeric:tabular-nums">{{ c.value }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <p style="margin:0;font-size:16px">If this is you, claiming it links the appointment to your wallet and lets you follow its progress. If it is not you, nothing is shared.</p>
+
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:12px">
+            <button type="button" onClick="{{ claimIt }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:var(--color-forest-ink);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:pointer">This is me — claim the appointment</button>
+            <button type="button" onClick="{{ rejectClaim }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-clay-alert);background:transparent;color:var(--color-clay-alert);font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:pointer">This is not me</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px;flex:1">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">Your wallet is ready</h1>
+            <p style="margin:0;font-size:16px">{{ doneLine }}</p>
+          </div>
+          <div style="background:var(--color-keylime-wash);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;gap:8px">
+            <span style="font-family:var(--font-serif);font-weight:300;font-size:20px;color:var(--color-forest-ink)">You decide who can see your record</span>
+            <span style="font-size:16px">No facility can read anything until you allow it. You can stop sharing at any time.</span>
+          </div>
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:12px">
+            <a href="Patient wallet.dc.html" style="min-height:48px;display:inline-flex;align-items:center;justify-content:center;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:var(--color-forest-ink);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:16px;font-weight:500;text-decoration:none">Open my health wallet</a>
+            <button type="button" onClick="{{ restart }}" style="min-height:48px;padding:0 20px;border:0;background:transparent;font-family:var(--font-sans);font-size:14px;color:var(--color-forest-ink);cursor:pointer;text-decoration:underline">Start the flow again</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isNotMe }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:24px;flex:1">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h1 style="margin:0;font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.2;color:var(--color-forest-ink)">Nothing was shared</h1>
+            <p style="margin:0;font-size:16px">The appointment stays with Loon Rural Health Unit and no details were added to your wallet. The health centre has been told the number may be wrong, and will contact the patient another way.</p>
+          </div>
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:12px">
+            <button type="button" onClick="{{ continueFresh }}" style="min-height:48px;padding:0 20px;border-radius:var(--radius-control);border:1px solid var(--color-forest-ink);background:var(--color-forest-ink);color:var(--color-cream-paper);font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:pointer">Continue setting up my wallet</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = {
+    screen: 'w1', path: 'direct',
+    phone: '9174028815', otp: ['', '', '', '', '', ''], otpError: false, resendIn: 45,
+    details: { name: '', dob: '', sex: '' },
+    consentTicked: false, claimed: false,
+  };
+
+  componentDidMount() {
+    this.timer = setInterval(() => {
+      this.setState(s => (s.screen === 'w3' && s.resendIn > 0 ? { resendIn: s.resendIn - 1 } : null));
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
+
+  btn(blocked) {
+    return {
+      blocked,
+      bg: blocked ? 'var(--color-border-mist)' : 'var(--color-forest-ink)',
+      ink: blocked ? 'var(--color-disabled-ink)' : 'var(--color-cream-paper)',
+      border: blocked ? 'var(--color-border-mist)' : 'var(--color-forest-ink)',
+      cursor: blocked ? 'not-allowed' : 'pointer',
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const digits = s.phone.replace(/[^0-9]/g, '');
+    const phoneText = digits.replace(/^(\d{3})(\d{0,3})(\d{0,4}).*$/, (m, a, b, c) => [a, b, c].filter(Boolean).join(' '));
+    const phoneValid = /^9\d{9}$/.test(digits);
+    const phonePretty = '+63 ' + phoneText;
+    const otp = s.otp.join('');
+
+    const screens = [['w1', 'W1 Welcome'], ['w2', 'W2 Phone'], ['w3', 'W3 OTP'], ['w4', 'W4 Details'], ['w5', 'W5 Privacy'], ['w6', 'W6 Claim']].map(([id, label]) => {
+      const on = s.screen === id;
+      return {
+        label, on,
+        bg: on ? 'var(--color-forest-ink)' : 'transparent',
+        ink: on ? 'var(--color-cream-paper)' : 'var(--color-forest-ink)',
+        border: on ? 'var(--color-forest-ink)' : 'var(--color-border-input)',
+        weight: on ? 600 : 400,
+        go: () => this.setState({
+          screen: id, otpError: false,
+          path: id === 'w6' ? 'invited' : s.path,
+          resendIn: id === 'w3' ? 45 : s.resendIn,
+        }),
+      };
+    });
+
+    const order = s.path === 'invited' ? ['w2', 'w3', 'w6', 'w5'] : ['w2', 'w3', 'w4', 'w5'];
+    const idx = order.indexOf(s.screen);
+    const detailsOk = s.details.name.trim().length > 2 && s.details.dob && s.details.sex;
+
+    const back = () => {
+      const prev = idx > 0 ? order[idx - 1] : 'w1';
+      this.setState({ screen: prev, otpError: false });
+    };
+
+    return {
+      screens,
+      isW1: s.screen === 'w1', isW2: s.screen === 'w2', isW3: s.screen === 'w3',
+      isW4: s.screen === 'w4', isW5: s.screen === 'w5', isW6: s.screen === 'w6',
+      isDone: s.screen === 'done', isNotMe: s.screen === 'notme',
+      showStep: idx >= 0,
+      stepLabel: idx >= 0 ? 'Step ' + (idx + 1) + ' of ' + order.length : '',
+      welcomePoints: [
+        { icon: 'event_available', title: 'Your appointments in one place', body: 'See what a health centre booked for you, where to go and when.' },
+        { icon: 'description', title: 'Results as soon as they are released', body: 'A laboratory releases a result to you and to the health centre that asked for it.' },
+        { icon: 'lock', title: 'You decide who can read it', body: 'A facility sees your record only while you allow it, and you can stop at any time.' },
+      ],
+      phoneText, phonePretty,
+      phoneLead: s.path === 'invited'
+        ? 'Enter the number your health centre has for you. The invite was sent to that number.'
+        : 'VITAL uses your mobile number to find your record and to text you a code.',
+      setPhone: e => this.setState({ phone: e.target.value.replace(/[^0-9]/g, '').slice(0, 10) }),
+      phoneHint: digits.length === 0 ? 'Start with 9. Ten digits after +63.'
+        : phoneValid ? 'We will text a six-digit code to this number.'
+        : 'That is not a complete Philippine mobile number yet.',
+      phoneHintHue: digits.length > 0 && !phoneValid ? 'var(--color-amber-hold)' : 'var(--color-charcoal-muted)',
+      phoneBtn: this.btn(!phoneValid),
+      sendCode: () => { if (phoneValid) this.setState({ screen: 'w3', resendIn: 45, otp: ['', '', '', '', '', ''], otpError: false }); },
+      back,
+      otpBoxes: s.otp.map((v, i) => ({
+        value: v, label: 'Code digit ' + (i + 1),
+        set: e => {
+          const d = (e.target.value || '').replace(/[^0-9]/g, '').slice(-1);
+          this.setState(st => ({ otp: st.otp.map((q, j) => j === i ? d : q), otpError: false }));
+        },
+      })),
+      otpBorder: s.otpError ? 'var(--color-clay-alert)' : 'var(--color-border-input)',
+      otpHint: s.otpError
+        ? 'That code does not match. Check the text message or ask for a new code.'
+        : 'The demo code is 402118.',
+      otpHintHue: s.otpError ? 'var(--color-clay-alert)' : 'var(--color-charcoal-muted)',
+      otpBtn: this.btn(otp.length !== 6),
+      verifyCode: () => {
+        if (otp.length !== 6) return;
+        if (otp === '402118') this.setState({ screen: s.path === 'invited' ? 'w6' : 'w4', otpError: false });
+        else this.setState({ otpError: true, otp: ['', '', '', '', '', ''] });
+      },
+      canResend: s.resendIn <= 0,
+      waitingResend: s.resendIn > 0,
+      resendLabel: 'You can ask for a new code in 0:' + String(Math.max(s.resendIn, 0)).padStart(2, '0'),
+      resend: () => this.setState({ resendIn: 45, otp: ['', '', '', '', '', ''], otpError: false }),
+      details: s.details,
+      setName: e => this.setState(st => ({ details: { ...st.details, name: e.target.value } })),
+      setDob: e => this.setState(st => ({ details: { ...st.details, dob: e.target.value } })),
+      sexOptions: ['Female', 'Male'].map(label => {
+        const on = s.details.sex === label;
+        return {
+          label, on,
+          bg: on ? 'var(--color-keylime-wash)' : 'transparent',
+          border: on ? 'var(--color-forest-ink)' : 'var(--color-border-input)',
+          weight: on ? 600 : 400,
+          pick: () => this.setState(st => ({ details: { ...st.details, sex: label } })),
+        };
+      }),
+      detailsBtn: this.btn(!detailsOk),
+      detailsHint: detailsOk
+        ? 'You can add height, weight, blood type and allergies later, in your wallet.'
+        : 'Fill in your name, date of birth and sex to continue.',
+      toConsent: () => { if (detailsOk) this.setState({ screen: 'w5' }); },
+      privacyPoints: [
+        { icon: 'inventory_2', body: 'VITAL stores your name, date of birth, sex, mobile number, your appointments, and the results a laboratory releases to you.' },
+        { icon: 'visibility_off', body: 'No facility can read any of it unless you allow that facility. Allowing one health centre does not allow any other.' },
+        { icon: 'history', body: 'Every time a facility opens your record it is written down, with the name of the person who opened it.' },
+        { icon: 'lock_open', body: 'You can stop sharing at any time. Stopping does not delete what a facility has already read.' },
+      ],
+      consentTicked: s.consentTicked,
+      setConsent: e => this.setState({ consentTicked: e.target.checked }),
+      consentBtn: this.btn(!s.consentTicked),
+      consentHint: s.consentTicked ? 'You can review this notice again from your wallet.' : 'Tick the box above if you agree.',
+      finish: () => { if (s.consentTicked) this.setState({ screen: 'done' }); },
+      claim: [
+        { label: 'Test requested', value: 'Complete blood count' },
+        { label: 'Laboratory', value: 'Loon Heritage Clinical Lab' },
+        { label: 'Slot', value: 'Wed 16 Sep 2026 · 09:30' },
+        { label: 'Booked by', value: 'J. Bacarro · Loon Rural Health Unit' },
+        { label: 'Appointment', value: 'APT-398' },
+      ],
+      claimIt: () => this.setState({ screen: 'w5', claimed: true }),
+      rejectClaim: () => this.setState({ screen: 'notme' }),
+      continueFresh: () => this.setState({ screen: 'w4', path: 'direct' }),
+      doneLine: s.claimed
+        ? 'Appointment APT-398 is now in your wallet. Loon Heritage Clinical Lab can read that one appointment, and nothing else.'
+        : 'You have not shared anything with a facility yet. Your wallet is empty until a health centre books for you, or you book an appointment yourself.',
+      restart: () => this.setState({ screen: 'w1', path: 'direct', otp: ['', '', '', '', '', ''], details: { name: '', dob: '', sex: '' }, consentTicked: false, claimed: false }),
+    };
+  }
+}
+</script>
+</body>
+</html>

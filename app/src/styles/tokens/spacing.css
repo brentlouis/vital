@@ -1,0 +1,53 @@
+/* VITAL spacing, shape, density and targets — DESIGN.md §3. */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-badge: 999px;
+  --radius-icon: 4px;
+
+  /* Comfortable — wallet, deck */
+  --card-padding-comfortable: 24px;
+  --row-height-comfortable: 56px;
+  --gap-comfortable: 16px;
+  --section-gap-comfortable: 48px;
+
+  /* Compact — RHU and laboratory portals */
+  --card-padding-compact: 16px;
+  --row-height-compact: 40px;
+  --gap-compact: 12px;
+  --section-gap-compact: 24px;
+
+  /* Targets */
+  --target-touch: 48px;    /* wallet, mobile */
+  --target-control: 40px;  /* portal controls */
+  --target-icon: 32px;     /* portal icon-only buttons */
+
+  /* Layout */
+  --gutter-portal: 24px;
+  --gutter-wallet: 16px;
+  --max-width-marketing: 1200px;
+}
+
+/* Density scopes — set on a surface root, components read the resolved vars. */
+[data-density="comfortable"] {
+  --card-padding: var(--card-padding-comfortable);
+  --row-height: var(--row-height-comfortable);
+  --gap: var(--gap-comfortable);
+  --section-gap: var(--section-gap-comfortable);
+}
+[data-density="compact"] {
+  --card-padding: var(--card-padding-compact);
+  --row-height: var(--row-height-compact);
+  --gap: var(--gap-compact);
+  --section-gap: var(--section-gap-compact);
+}
