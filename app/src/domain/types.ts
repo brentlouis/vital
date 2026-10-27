@@ -23,6 +23,10 @@ export interface TrailEvent {
   note?: string;
   /** A slot this event proposes or agrees to. */
   slot?: Minute;
+  /** This entry withdraws the step named in `status`, taken by mistake moments earlier by the
+      same person. Both entries stay in the trail; the status is worked out as if the step had
+      not been taken (brief §10.5). */
+  withdraws?: true;
 }
 
 export interface Result {
@@ -36,6 +40,11 @@ export interface Result {
 }
 
 /* The stored appointment. Status is never stored: it is the latest event in the trail. */
+/* Who is seen first: an urgent clinical need, or the groups Philippine law gives priority
+   lanes (senior citizens, persons with disability, pregnant women). */
+export const PRIORITY_REASONS = ['Urgent clinical need', 'Senior citizen', 'Person with disability', 'Pregnant'] as const;
+export type PriorityReason = typeof PRIORITY_REASONS[number];
+
 export interface AppointmentRecord {
   id: string;
   patientId: string;
@@ -53,6 +62,18 @@ export interface AppointmentRecord {
   notSent?: string[];
   /** Tests a patient asked for that this facility accepts only on a health-centre referral. */
   referralRequired?: string[];
+  /** A doctor visit (a consultation) rather than a test. Closes when the doctor has seen the
+      patient; it never carries a result document. Absent for tests. */
+  kind?: 'Consultation';
+  /** The doctor visit this appointment was ordered from, if any. */
+  fromVisit?: string;
+  /** Why the referring facility gave it priority: it goes to the top of the receiving queue.
+      Set for the patient's sake only (clinical need or a priority-lane group), never by plan or
+      payment. */
+  priority?: PriorityReason;
+  /** The patient (or referrer) let VITAL pick the time. The receiving facility then cannot set
+      a time by hand: it accepts, or has VITAL pick again. */
+  autoTime?: boolean;
   trail: TrailEvent[];
   /** Every result document ever released, voided ones included — never deleted. */
   results: Result[];
@@ -78,7 +99,34 @@ export interface AuditEntry {
   actor: string;
   facility: string;
   patientId: string;
-  action: 'Access denied';
+  action: 'Access denied' | 'History viewed';
+}
+
+/* The patient's earlier results and self-entered details, shared with one facility. Separate
+   from appointment consent and off by default. Given at the counter with a referral (ends when
+   that appointment closes) or from the wallet (until the patient stops it). */
+export interface HistoryGrant {
+  patientId: string;
+  facility: string;
+  granted: Minute;
+  /** The appointment it was given with; null when given from the wallet. */
+  appointmentId: string | null;
+  /** Who recorded it: a staff member at the counter, or "Health wallet". */
+  by: string;
+  revokedAt?: Minute;
+}
+
+/* A problem a facility reports to the VITAL administrators. */
+export interface Issue {
+  id: string;
+  facility: string;
+  by: string;
+  at: Minute;
+  topic: 'Wrong or missing data' | 'Access or sign-in' | 'Something does not work' | 'Other';
+  text: string;
+  status: 'Open' | 'Resolved';
+  resolvedAt?: Minute;
+  resolution?: string;
 }
 
 export type RegistrationStatus = 'Pending' | 'Approved' | 'Rejected';

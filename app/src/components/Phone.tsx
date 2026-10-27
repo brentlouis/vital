@@ -1,12 +1,15 @@
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react';
 import { DemoClock } from './DemoClock';
+import { skipToMain } from './useScreenFocus';
+import { Logo } from './Logo';
+import { demoControlsOn } from './demoMode';
 
 /* Material Symbols Rounded glyph — the wallet's icon set. Decorative unless labelled. */
 export function Ms({ glyph, size = 24, style, className }: { glyph: string; size?: number; style?: CSSProperties; className?: string }) {
   return <span className={['ms', className].filter(Boolean).join(' ')} style={{ fontSize: size, ...style }} aria-hidden="true">{glyph}</span>;
 }
 
-/* The mint stage the phone sits on, with the prototype screen switcher above it. */
+/* The mint stage the phone sits on. With ?demo, the prototype screen switcher sits above it. */
 export function PhoneStage<T extends string>({ screens, value, onChange, pillStyle = 'muted', children }: {
   screens: { id: T; label: string }[];
   value: T | null;
@@ -15,16 +18,23 @@ export function PhoneStage<T extends string>({ screens, value, onChange, pillSty
   pillStyle?: 'forest' | 'muted';
   children: ReactNode;
 }) {
+  /* The screen switcher and clock are prototype controls, shown only with ?demo. */
+  const demo = demoControlsOn();
   return (
     <div className="stage">
-      <div className="stage__pills">
-        <span className="stage__label">Prototype screens</span>
-        {screens.map(s => (
-          <button key={s.id} type="button" className={`stage__pill stage__pill--${pillStyle}`} aria-pressed={s.id === value}
-            onClick={() => onChange(s.id)}>{s.label}</button>
-        ))}
-      </div>
-      <DemoClock />
+      {demo && (
+        <>
+          <a className="skip-link" href="#main" onClick={skipToMain}>Skip to the app</a>
+          <div className="stage__pills">
+            <span className="stage__label">Prototype screens</span>
+            {screens.map(s => (
+              <button key={s.id} type="button" className={`stage__pill stage__pill--${pillStyle}`} aria-pressed={s.id === value}
+                onClick={() => onChange(s.id)}>{s.label}</button>
+            ))}
+          </div>
+          <DemoClock />
+        </>
+      )}
       {children}
       <p className="stage__foot">Synthetic records. Never place real patient data in a prototype.</p>
     </div>
@@ -44,12 +54,12 @@ export function Phone({ headerEnd, tabbar, children, bodyClassName }: {
         </span>
       </div>
       <div className={tabbar ? 'phone__header phone__header--tight' : 'phone__header'}>
-        <span className="phone__brand">VITAL</span>
+        <span className="phone__brand"><Logo height={18} /></span>
         {headerEnd}
       </div>
-      <div className={['phone__body', tabbar ? 'phone__body--tabbed' : '', bodyClassName].filter(Boolean).join(' ')}>
+      <main className={['phone__body', tabbar ? 'phone__body--tabbed' : '', bodyClassName].filter(Boolean).join(' ')}>
         {children}
-      </div>
+      </main>
       {tabbar && <nav className="phone__tabbar" aria-label="Wallet">{tabbar}</nav>}
     </div>
   );

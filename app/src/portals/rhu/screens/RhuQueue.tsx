@@ -1,8 +1,50 @@
-import type { KeyboardEvent } from 'react';
+import { SyncStatus } from '../../../components/SyncStatus';
 import { FilePlus, Users } from 'lucide-react';
-import { Button, Chip, Icon, StatusBadge, Tabs } from '../../../components/ui';
+import { Button, Chip, Icon, Segmented, StatusBadge, Tabs } from '../../../components/ui';
 import { STATUS_META } from '../../../domain/status';
 import { QUEUE_TABS, type Direction, type Rhu } from '../useRhu';
+import { WorkList } from '../../../components/WorkList';
+import { RhuDetail } from './RhuDetail';
+
+/* R1 + R3–R6 side by side on a wide screen: the referrals as a list, the chosen one beside it. */
+export function RhuWorkspace({ rhu }: { rhu: Rhu }) {
+  const rows = rhu.buckets[rhu.filter];
+  const current = rows.find(r => r.id === rhu.selected?.id && rhu.access(r) !== 'denied') ?? rows.find(r => rhu.access(r) !== 'denied') ?? null;
+  return (
+    <div className="workspace">
+      <div className="page-head workspace__head">
+        <h1 className="page-title">Appointment queue</h1>
+        {rhu.merged && (
+          <Segmented<Direction> label="Show" value={rhu.direction} onChange={rhu.setDirection}
+            items={[
+              { id: 'Outgoing', label: 'Referrals sent', count: rhu.outgoing.length },
+              { id: 'Incoming', label: 'Doctor visits', count: rhu.incoming.length },
+            ]} />
+        )}
+        <div className="page-head__actions">
+          <SyncStatus now={rhu.now} />
+          <Button size="md" icon={FilePlus} onClick={() => rhu.setScreen('new')}>New appointment</Button>
+        </div>
+      </div>
+      <div className="workspace__filters">
+        <Tabs label="Queue filter" value={rhu.filter} onChange={rhu.setFilter}
+          items={QUEUE_TABS.map(t => ({ id: t, label: t, count: rhu.buckets[t].length }))} />
+      </div>
+      <section className="workspace__list" aria-label="Queue">
+        <WorkList rows={rows} selectedId={current?.id ?? null} onSelect={rhu.openDetail}
+          name={r => (rhu.access(r) === 'denied' ? <span className="muted">Access withdrawn</span> : r.patient)}
+          line={r => <>{rhu.access(r) === 'full' ? r.test : 'Withdrawn'} · <span className="tabular">{r.scheduledAt}</span></>}
+          from={r => (r.visit ? 'Booked by the patient' : r.lab)}
+          empty={<><span className="empty__title">Nothing here.</span><span className="empty__body">{rhu.direction === 'Incoming' ? 'Doctor visits patients book with this health centre appear here.' : 'Appointments you send appear here as the laboratory updates them.'}</span></>} />
+      </section>
+      <section className="workspace__detail" aria-label="Selected appointment">
+        {current
+          ? <RhuDetail rhu={rhu} sel={current} embedded />
+          : <div className="worklist__empty"><span className="empty__title">Choose an appointment</span><span className="empty__body">Its details appear here.</span></div>}
+      </section>
+    </div>
+  );
+}
 
 /* R1 — every appointment this health centre has sent, grouped by what it needs from here. */
 export function RhuQueue({ rhu }: { rhu: Rhu }) {
@@ -19,18 +61,17 @@ export function RhuQueue({ rhu }: { rhu: Rhu }) {
         <span className="muted tabular">{rows.length} {rows.length === 1 ? 'appointment' : 'appointments'}</span>
         <Chip>{caps.type} · {capabilityLine}</Chip>
         <div className="page-head__actions">
+          <SyncStatus now={rhu.now} />
           <Button size="md" icon={FilePlus} onClick={() => rhu.setScreen('new')}>New appointment</Button>
         </div>
       </div>
 
       {rhu.merged && (
-        <Tabs<Direction>
-          label="Direction" value={rhu.direction} onChange={rhu.setDirection}
+        <Segmented<Direction> label="Show" value={rhu.direction} onChange={rhu.setDirection}
           items={[
-            { id: 'Outgoing', label: 'Outgoing', count: rhu.outgoing.length },
-            { id: 'Incoming', label: 'Incoming', count: rhu.incoming.length },
-          ]}
-        />
+            { id: 'Outgoing', label: 'Referrals sent', count: rhu.outgoing.length },
+            { id: 'Incoming', label: 'Doctor visits', count: rhu.incoming.length },
+          ]} />
       )}
       <Tabs label="Queue filter" value={rhu.filter} onChange={rhu.setFilter}
         items={QUEUE_TABS.map(t => ({ id: t, label: t, count: rhu.buckets[t].length }))} />
@@ -54,12 +95,14 @@ export function RhuQueue({ rhu }: { rhu: Rhu }) {
           <tbody>
             {rows.map(r => {
               const open = () => rhu.openDetail(r.id);
-              const onKey = (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } };
               return (
-                <tr key={r.id} tabIndex={0} role="button" onClick={open} onKeyDown={onKey}
-                  className={`queue__row accent--${STATUS_META[r.status].accent}`}>
+                <tr key={r.id} onClick={open} className={`queue__row accent--${STATUS_META[r.status].accent}`}>
                   <td><StatusBadge status={r.status} /></td>
-                  <td className="queue__patient">{rhu.access(r) === 'denied' ? <span className="muted">Access withdrawn</span> : r.patient}</td>
+                  <td className="queue__patient">
+                    <button type="button" className="row-link" onClick={e => { e.stopPropagation(); open(); }}>
+                      {rhu.access(r) === 'denied' ? <span className="muted">Access withdrawn</span> : r.patient}
+                    </button>
+                  </td>
                   <td>{r.lab}</td>
                   <td>{rhu.access(r) === 'full' ? r.test : <span className="muted">Withdrawn</span>}</td>
                   <td className="tabular nowrap">{r.scheduledAt}</td>
@@ -112,10 +155,13 @@ export function PatientSearch({ rhu }: { rhu: Rhu }) {
           </thead>
           <tbody>
             {rhu.people.map(p => (
-              <tr key={p.id} className="queue__row" tabIndex={0} role="button"
-                onClick={() => p.latest && rhu.openDetail(p.latest)}
-                onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && p.latest) { e.preventDefault(); rhu.openDetail(p.latest); } }}>
-                <td className="queue__patient">{p.name}{!p.consent && <span className="muted"> · consent withdrawn</span>}</td>
+              <tr key={p.id} className="queue__row" onClick={() => p.latest && rhu.openDetail(p.latest)}>
+                <td className="queue__patient">
+                  <button type="button" className="row-link" onClick={e => { e.stopPropagation(); if (p.latest) rhu.openDetail(p.latest); }}>
+                    {p.name}
+                  </button>
+                  {!p.consent && <span className="muted"> · consent withdrawn</span>}
+                </td>
                 <td className="tabular">{p.id}</td>
                 <td className="tabular">{p.age}</td>
                 <td>{p.municipality}</td>

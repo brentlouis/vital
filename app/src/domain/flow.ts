@@ -2,7 +2,7 @@
    person may do, and the store refuses any write this table does not allow. Change a rule
    here and every portal follows; tests (flow.test.ts) check the seed against it. */
 
-import type { AppointmentRecord, EventStatus, Origin, Status, Viewer } from './types';
+import type { AppointmentRecord, EventStatus, Origin, Status, TrailEvent, Viewer } from './types';
 import { HOUR, DAY, type Minute } from './time';
 
 /* Who, relative to one appointment, may take a step. */
@@ -39,14 +39,18 @@ export const STEPS: Step[] = [
   { to: 'Patient arrived', from: ['Accepted', 'Overdue'], by: 'receiver' },
   /* No-show only once the slot has passed: before that the patient may still come. */
   { to: 'No-show', from: ['Overdue'], by: 'receiver' },
-  { to: 'Endorsed', from: ['Patient arrived', 'Result voided'], by: 'receiver' },
+  /* A test ends in a result; a doctor visit ends when the doctor has seen the patient. */
+  { to: 'Endorsed', from: ['Patient arrived', 'Result voided'], by: 'receiver', when: a => !isVisit(a) },
+  { to: 'Completed', from: ['Patient arrived'], by: 'receiver', when: a => isVisit(a) },
   /* Whoever ordered the test closes the loop: the referrer, the ordering clinic, or — for a
      personal appointment — the patient, by opening the result. */
   { to: 'Completed', from: ['Endorsed'], by: 'orderer' },
   /* A misfiled result can be voided even after it was acknowledged. */
-  { to: 'Result voided', from: ['Endorsed', 'Completed'], by: 'receiver' },
+  { to: 'Result voided', from: ['Endorsed', 'Completed'], by: 'receiver', when: a => !isVisit(a) },
   { to: 'Consent revoked', from: OPEN, by: 'patient' },
 ];
+
+export function isVisit(a: Pick<AppointmentRecord, 'kind'>): boolean { return a.kind === 'Consultation'; }
 
 /* The one event that brings each origin into existence, and who writes it. */
 export const START: Record<Origin, { status: EventStatus; by: Role }> = {
@@ -55,9 +59,21 @@ export const START: Record<Origin, { status: EventStatus; by: Role }> = {
   Internal: { status: 'Accepted', by: 'orderer' },
 };
 
-/* Status is always the latest event (brief §2). */
+/* The steps that stand: the trail without withdrawn steps and the entries withdrawing them.
+   The trail itself is append-only — a withdrawal is a further entry, never a removal. */
+export function liveTrail(a: AppointmentRecord): TrailEvent[] {
+  const live: TrailEvent[] = [];
+  for (const e of a.trail) {
+    if (e.withdraws) live.pop();
+    else live.push(e);
+  }
+  return live;
+}
+
+/* Status is always the latest event that stands (brief §2). */
 export function storedStatus(a: AppointmentRecord): EventStatus {
-  return a.trail[a.trail.length - 1].status;
+  const live = liveTrail(a);
+  return live[live.length - 1].status;
 }
 
 /* What the appointment shows: the stored status, or Overdue once an accepted slot has
@@ -71,7 +87,8 @@ export function isTerminal(s: Status): boolean { return TERMINAL.includes(s); }
 
 /* The latest proposal still waiting on the patient, if any. */
 export function openProposal(a: AppointmentRecord) {
-  const last = a.trail[a.trail.length - 1];
+  const live = liveTrail(a);
+  const last = live[live.length - 1];
   return last.status === 'Reschedule proposed' ? last : undefined;
 }
 export function responseMinutesLeft(a: AppointmentRecord, now: Minute): number | null {
@@ -123,6 +140,13 @@ export function checkTrail(a: AppointmentRecord, roleOfEvent: (i: number) => Rol
     const prev = a.trail[i - 1];
     const ev = a.trail[i];
     if (ev.at < prev.at) return `${a.id}: event ${i} (${ev.status}) is earlier than the one before it`;
+    /* A withdrawal names the step right before it, written by the same person. */
+    if (ev.withdraws) {
+      if (prev.withdraws || prev.status !== ev.status || prev.actor !== ev.actor || prev.facility !== ev.facility) {
+        return `${a.id}: event ${i} withdraws ${ev.status}, which is not the step before it by the same person`;
+      }
+      continue;
+    }
     const before: AppointmentRecord = { ...a, trail: a.trail.slice(0, i), slot: slotAt(a, i) };
     const shown = shownStatus(before, ev.at);
     const role = roleOfEvent(i);

@@ -32,14 +32,20 @@ the laboratory's queue and the patient's wallet; a patient revoking access in th
 as withdrawn in the laboratory. State is saved in this browser's localStorage, so a reload keeps
 it, and two tabs — say the RHU in one and the laboratory in another — stay in sync live.
 
-The prototype bar on every surface carries a **demo clock**. "+1 hour" and "+1 day" move time
-forward so slots go overdue, proposed times run out and reminders arrive on their own. "Reset
-demo" returns every surface to the seed.
+Every surface looks like the finished product: the prototype's own controls are hidden. Add
+`?demo` to any address to show them for that browser tab (`?demo=off` hides them again). They
+are a screen switcher and a **demo clock** — "+1 hour" and "+1 day" move time forward so slots
+go overdue, proposed times run out and reminders arrive on their own. The start page has
+**Reset demo data**, which returns every surface to the seed, and a link to the laboratory
+portal as a clinic that refers and receives.
 
 ## Spec
 
 [`docs/PROTOTYPE_BRIEF.md`](docs/PROTOTYPE_BRIEF.md) is the product brief: the appointment model, the
 state machine, facility matching and every screen. Change it together with the code.
+
+[`docs/DECISIONS.md`](docs/DECISIONS.md) records why things are the way they are (append-only), and
+[`docs/PROGRESS.md`](docs/PROGRESS.md) what is done, next, blocked and open.
 
 ## Layout
 
@@ -60,5 +66,5 @@ state machine, facility matching and every screen. Change it together with the c
 - `src/styles/` — design tokens (copied unchanged from `vital/project/vital/tokens`), shared
   components, compact desktop surfaces (`portal.css`) and phone surfaces (`mobile.css`).
 
-The prototype bar at the top of each surface is a demo aid for jumping between screens,
+The prototype bar (shown with `?demo`) is a demo aid for jumping between screens,
 configurations and time. It is not product UI.

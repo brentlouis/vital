@@ -75,54 +75,112 @@ export function portalFor(facility: string): '/rhu' | '/lab' {
 
 /* Whether a test typically needs a provider decision. The binding rule is per facility
    (referralTests below), declared by the facility at registration. */
-export const TEST_META = [
-  { name: 'CBC', long: 'Complete blood count', needsReferral: false },
-  { name: 'Fasting blood sugar', long: 'Fasting blood sugar', needsReferral: false },
-  { name: 'Urinalysis', long: 'Urinalysis', needsReferral: false },
-  { name: 'Chest X-ray', long: 'Chest X-ray', needsReferral: true },
-  { name: 'Rabies vaccination', long: 'Rabies vaccination', needsReferral: false },
-  { name: 'Lipid profile', long: 'Lipid profile', needsReferral: false },
-  { name: 'Sputum smear', long: 'Sputum smear', needsReferral: true },
-  { name: 'Pregnancy test', long: 'Pregnancy test', needsReferral: false },
+/* The kinds of test, for filtering a long catalogue. */
+export const TEST_TYPES = ['Blood', 'Urine', 'Imaging', 'Microbiology', 'Vaccination'] as const;
+export type TestType = typeof TEST_TYPES[number];
+
+export const TEST_META: { name: string; long: string; needsReferral: boolean; type: TestType }[] = [
+  { name: 'CBC', long: 'Complete blood count', needsReferral: false, type: 'Blood' },
+  { name: 'Fasting blood sugar', long: 'Fasting blood sugar', needsReferral: false, type: 'Blood' },
+  { name: 'Urinalysis', long: 'Urinalysis', needsReferral: false, type: 'Urine' },
+  { name: 'Chest X-ray', long: 'Chest X-ray', needsReferral: true, type: 'Imaging' },
+  { name: 'Rabies vaccination', long: 'Rabies vaccination', needsReferral: false, type: 'Vaccination' },
+  { name: 'Lipid profile', long: 'Lipid profile', needsReferral: false, type: 'Blood' },
+  { name: 'Sputum smear', long: 'Sputum smear', needsReferral: true, type: 'Microbiology' },
+  { name: 'Pregnancy test', long: 'Pregnancy test', needsReferral: false, type: 'Urine' },
 ];
 export const TESTS = TEST_META.map(t => t.name);
+
+/* How a patient reads a test: the full name, with the abbreviation staff use in brackets
+   ("Complete blood count (CBC)"). Staff portals keep the short names. */
+export function plainTest(name: string): string {
+  const m = TEST_META.find(t => t.name === name);
+  return m && m.long !== name ? `${m.long} (${name})` : name;
+}
+export function plainTests(names: string[]): string {
+  return names.map(plainTest).join(', ');
+}
 
 /* Test coverage per facility, plus disclosed subscription tier (brief §3). */
 export interface Facility {
   name: string;
   municipality: string;
   travel: string;
-  partner: boolean;
   coverage: string[];
   referralTests: string[];
 }
 
 export const FACILITIES: Facility[] = [
-  { name: 'Tagbilaran Diagnostic Center', municipality: 'Tagbilaran', travel: '35 min by van', partner: true,
+  { name: 'Tagbilaran Diagnostic Center', municipality: 'Tagbilaran', travel: '35 min by van',
     coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Chest X-ray', 'Lipid profile', 'Sputum smear', 'Pregnancy test'],
     referralTests: ['Chest X-ray', 'Sputum smear'] },
-  { name: 'Dauis Bayview Laboratory', municipality: 'Dauis', travel: '40 min by van', partner: false,
+  { name: 'Dauis Bayview Laboratory', municipality: 'Dauis', travel: '40 min by van',
     coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Chest X-ray', 'Lipid profile'],
     referralTests: ['Chest X-ray'] },
-  { name: 'Baclayon Parish Diagnostics', municipality: 'Baclayon', travel: '50 min by van', partner: false,
+  { name: 'Baclayon Parish Diagnostics', municipality: 'Baclayon', travel: '50 min by van',
     coverage: ['CBC', 'Urinalysis', 'Chest X-ray', 'Sputum smear'],
     referralTests: ['Sputum smear'] },
-  { name: 'Panglao Island Medical Lab', municipality: 'Panglao', travel: '1 hr 5 min by van', partner: true,
+  { name: 'Panglao Island Medical Lab', municipality: 'Panglao', travel: '1 hr 5 min by van',
     coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Rabies vaccination', 'Pregnancy test'],
     referralTests: [] },
-  { name: 'Loon Heritage Clinical Lab', municipality: 'Loon', travel: '10 min on foot', partner: false,
+  { name: 'Loon Heritage Clinical Lab', municipality: 'Loon', travel: '10 min on foot',
     coverage: ['CBC', 'Fasting blood sugar', 'Urinalysis', 'Pregnancy test'],
     referralTests: [] },
-  { name: 'Loboc Riverside Laboratory', municipality: 'Loboc', travel: '1 hr 20 min by van', partner: true,
+  { name: 'Loboc Riverside Laboratory', municipality: 'Loboc', travel: '1 hr 20 min by van',
     coverage: ['Fasting blood sugar', 'Urinalysis', 'Rabies vaccination'],
     referralTests: [] },
 ];
+/* What a doctor visit is called on every surface: it stands in the tests list. */
+export const VISIT = 'Doctor visit';
+
+/* Facilities with doctors a patient can book a visit with: those that refer, since a referral
+   is a doctor's decision. Their visit times come from the same published schedule. */
+/* Every one offers a visit, so they are listed nearest first. No facility can pay to move up. */
+export const VISIT_FACILITIES: { name: string; municipality: string; travel: string; minutes: number; doctors: string; healthCentre?: boolean }[] = [
+  { name: 'Tagbilaran Diagnostic Center', municipality: 'Tagbilaran', travel: '35 min by van', minutes: 35, doctors: 'General medicine clinic' },
+  { name: 'Loon Rural Health Unit', municipality: 'Loon', travel: '5 min on foot', minutes: 5, doctors: 'Municipal health officer and midwives', healthCentre: true },
+].sort((a, b) => a.minutes - b.minutes);
+
+/* Subscription plans (concept note, business model): priced per facility by active patients.
+   A planning assumption until the pilot validates it. */
+export const PLAN_PRICES: { plan: 'Premium' | 'Premium+'; bracket: string; max: number; monthly: number }[] = [
+  { plan: 'Premium', bracket: '1–30', max: 30, monthly: 499 },
+  { plan: 'Premium', bracket: '1–50', max: 50, monthly: 749 },
+  { plan: 'Premium', bracket: '1–100', max: 100, monthly: 999 },
+  { plan: 'Premium+', bracket: '1–30', max: 30, monthly: 599 },
+  { plan: 'Premium+', bracket: '1–50', max: 50, monthly: 849 },
+  { plan: 'Premium+', bracket: '1–100', max: 100, monthly: 1099 },
+];
+/* Which plan each pilot facility is on. A plan never changes how a facility is ranked:
+   Premium+ buys the referring facility better recommendations, not a better position. */
+export const FACILITY_PLAN: Record<string, 'Premium' | 'Premium+'> = {
+  'Loon Rural Health Unit': 'Premium',
+  'Tagbilaran Diagnostic Center': 'Premium+',
+  'Panglao Island Medical Lab': 'Premium+',
+  'Loboc Riverside Laboratory': 'Premium+',
+  'Loon Heritage Clinical Lab': 'Premium',
+  'Dauis Bayview Laboratory': 'Premium',
+  'Baclayon Parish Diagnostics': 'Premium',
+};
+
+/* The manual-process baseline each pilot site recorded before the pilot (objective 4), in
+   hours from referral to result in hand. Sample figures until the sites measure their own. */
+export const MANUAL_BASELINE_HOURS = 72;
+
+/* "1 hr 5 min by van" → 65, for ordering by distance. */
+export function travelMinutes(travel: string): number {
+  const h = /(\d+)\s*hr/.exec(travel);
+  const m = /(\d+)\s*min/.exec(travel);
+  return (h ? Number(h[1]) * 60 : 0) + (m ? Number(m[1]) : 0);
+}
+
 export function facility(name: string): Facility | undefined { return FACILITIES.find(f => f.name === name); }
 
 /* Each receiving facility publishes its own schedule for the next three days: times for day
    1, 2 and 3 after today. This is the single source of slot data — L6 renders it, and P7, R2
    and L9 may only offer slots drawn from it. Static pattern, no capacity engine (brief §1.3). */
 const PATTERN: Record<string, [string[], string[], string[]]> = {
+  'Loon Rural Health Unit':       [['08:00', '08:30', '09:00', '10:00', '13:30'], ['08:00', '09:30', '10:30', '14:00'], ['08:30', '09:00', '13:00']],
   'Tagbilaran Diagnostic Center': [['07:30', '08:00', '09:30', '13:00', '14:30'], ['07:30', '10:00', '11:00', '15:00'], ['08:30', '09:00', '13:30']],
   'Dauis Bayview Laboratory':     [['08:00', '09:00', '10:30'], ['08:00', '13:30', '14:00'], ['09:30', '11:00']],
   'Baclayon Parish Diagnostics':  [[], ['09:00', '10:00'], ['08:00', '08:30', '13:00']],
@@ -157,7 +215,7 @@ export interface Person {
 }
 
 export const PEOPLE: Person[] = ([
-  ['Abdon, Maricel', 'PH-4409-1182', 34, 'F', 'Loon', '+63 917 402 8815'],
+  ['Dela Cruz, Maria', 'PH-4409-1182', 67, 'F', 'Loon', '+63 917 402 8815'],
   ['Bagatsing, Lorenzo', 'PH-3318-0924', 61, 'M', 'Tagbilaran', '+63 918 220 1147'],
   ['Cadapan, Reynaldo', 'PH-7712-4408', 58, 'M', 'Baclayon', '+63 906 553 0918'],
   ['Lumandas, Imelda', 'PH-1180-6631', 47, 'F', 'Dauis', '+63 917 118 6630'],
@@ -195,7 +253,7 @@ export function person(id: string): Person {
   return p;
 }
 
-/** "Abdon, Maricel" → "Maricel Abdon" */
+/** "Dela Cruz, Maria" → "Maria Dela Cruz" */
 export function givenFirst(name: string): string {
   return name.split(', ').reverse().join(' ');
 }
@@ -205,7 +263,7 @@ export const WALLET_PATIENT = PEOPLE[0];
 
 /* Patient-entered, never computed or interpreted by VITAL (brief §5). */
 export const PROFILE = [
-  { label: 'Age', value: '34 years', updated: '02 Feb 2026' },
+  { label: 'Age', value: '67 years', updated: '02 Feb 2026' },
   { label: 'Sex', value: 'Female', updated: '02 Feb 2026' },
   { label: 'Height', value: '1.55 m', updated: '02 Feb 2026' },
   { label: 'Weight', value: '58 kg', updated: '04 Aug 2026' },
@@ -244,5 +302,5 @@ export function rankFacilities(selected: string[]): RankedFacility[] {
     .sort((a, b) =>
       (a.full === b.full ? 0 : a.full ? -1 : 1) ||
       (b.have - a.have) ||
-      (a.partner === b.partner ? 0 : a.partner ? -1 : 1));
+      (travelMinutes(a.travel) - travelMinutes(b.travel)));
 }

@@ -82,3 +82,15 @@ export function ago(now: Minute, m: Minute): string {
   const d = Math.round(mins / 1440);
   return d === 1 ? 'Yesterday' : `${d} days ago`;
 }
+
+/** "September 2026" — a heading for a month of appointments or documents. */
+export function fmtMonth(m: Minute): string {
+  const d = toDate(m);
+  return `${LONG_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** { day: "16", month: "Sep" } — the date block on a list entry. */
+export function dateBlock(m: Minute): { day: string; month: string } {
+  const d = toDate(m);
+  return { day: String(d.getDate()), month: MONTHS[d.getMonth()] };
+}

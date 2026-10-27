@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { Building2, ChevronLeft, Hospital, Smartphone, type LucideIcon } from 'lucide-react';
+import { Building2, ChevronLeft, CircleCheck, Hospital, Smartphone, X, type LucideIcon } from 'lucide-react';
 import type { Origin, Status } from '../domain/types';
 import { STATUS_META } from '../domain/status';
 
@@ -58,8 +58,9 @@ export function BackButton({ onClick, children }: { onClick: () => void; childre
   );
 }
 
-/* Tinted panel with an icon. Amber is attention, clay is failure — both carry a 3px left
-   border. Keylime is informational and takes a full hairline outline instead. */
+/* Tinted panel with an icon and a hairline outline in its own hue. Amber is attention, clay
+   is failure, keylime is informational. The 3px left stripe is reserved for queue rows,
+   where it marks status down a long table. */
 export function Callout({
   tone, icon, title, children, className,
 }: { tone: 'amber' | 'clay' | 'keylime'; icon: LucideIcon; title?: ReactNode; children?: ReactNode; className?: string }) {
@@ -130,6 +131,23 @@ export function Tabs<T extends string>({ items, value, onChange, label }: {
 }
 
 /* Segmented pill switcher used by the prototype chrome. */
+/* A two- or three-way switch for which set of records a page shows (Incoming / Outgoing).
+   Deliberately unlike the status tabs, so the two kinds of choice never read as one row. */
+export function Segmented<T extends string>({ items, value, onChange, label }: {
+  items: { id: T; label: string; count?: number }[]; value: T; onChange: (id: T) => void; label: string;
+}) {
+  return (
+    <div className="segmented" role="group" aria-label={label}>
+      {items.map(it => (
+        <button key={it.id} type="button" className="segmented__item" aria-pressed={it.id === value} onClick={() => onChange(it.id)}>
+          {it.label}
+          {it.count !== undefined && <span className="segmented__count tabular">{it.count}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Pills<T extends string>({ items, value, onChange }: {
   items: { id: T; label: string }[]; value: T | null; onChange: (id: T) => void;
 }) {
@@ -153,8 +171,43 @@ export interface DialogSpec {
   onConfirm: () => void;
 }
 
+export interface ToastSpec {
+  message: string;
+  /** Offered only for a step that can still be taken back. */
+  undo?: () => void;
+  /** Distinguishes two toasts with the same words, so the timer restarts. */
+  key: number;
+}
+
+/* Confirms that a step was written, and for a one-tap step offers to take it back. The live
+   region is always mounted so a screen reader announces each new message. */
+export function Toast({ toast, onClose }: { toast: ToastSpec | null; onClose: () => void }) {
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; });
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => closeRef.current(), 8000);
+    return () => window.clearTimeout(t);
+  }, [toast]);
+  return (
+    <div className="toast-region" role="status" aria-live="polite">
+      {toast && (
+        <div className="toast" key={toast.key}>
+          <span className="toast__icon"><Icon icon={CircleCheck} size={18} /></span>
+          <span className="toast__message">{toast.message}</span>
+          {toast.undo && (
+            <button type="button" className="toast__undo" onClick={() => { toast.undo!(); onClose(); }}>Undo</button>
+          )}
+          <button type="button" className="toast__close" aria-label="Dismiss" onClick={onClose}><Icon icon={X} size={16} /></button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ConfirmDialog({ spec, onClose }: { spec: DialogSpec | null; onClose: () => void }) {
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
   useEffect(() => { closeRef.current = onClose; });
   /* Focus lands on the safe choice when the dialog opens; Escape always closes. */
@@ -162,7 +215,17 @@ export function ConfirmDialog({ spec, onClose }: { spec: DialogSpec | null; onCl
     if (!spec) return;
     const opener = document.activeElement as HTMLElement | null;
     cancelRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeRef.current(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { closeRef.current(); return; }
+      /* Keep Tab inside the dialog: the page behind it is not reachable until it closes. */
+      if (e.key !== 'Tab' || !boxRef.current) return;
+      const items = [...boxRef.current.querySelectorAll<HTMLElement>('button:not([disabled])')];
+      if (!items.length) return;
+      const firstEl = items[0], lastEl = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === firstEl) { e.preventDefault(); lastEl.focus(); }
+      else if (!e.shiftKey && document.activeElement === lastEl) { e.preventDefault(); firstEl.focus(); }
+      else if (!boxRef.current.contains(document.activeElement)) { e.preventDefault(); firstEl.focus(); }
+    };
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
@@ -172,9 +235,9 @@ export function ConfirmDialog({ spec, onClose }: { spec: DialogSpec | null; onCl
   if (!spec) return null;
   return (
     <div className="scrim">
-      <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className="dialog">
+      <div ref={boxRef} role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-body" className="dialog">
         <h2 id="dialog-title" className="dialog__title">{spec.title}</h2>
-        <p className="dialog__body">{spec.body}</p>
+        <p id="dialog-body" className="dialog__body">{spec.body}</p>
         <div className="dialog__actions">
           <button ref={cancelRef} type="button" className="btn btn--ghost btn--md" onClick={onClose}>{spec.cancel}</button>
           <button type="button" className="btn btn--danger btn--md" onClick={spec.onConfirm}>{spec.action}</button>

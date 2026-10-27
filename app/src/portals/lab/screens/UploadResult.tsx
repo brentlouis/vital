@@ -52,7 +52,7 @@ export function UploadResult({ lab, sel }: { lab: Lab; sel: Appointment }) {
           <p className="upload__text">Read the name and patient ID back to the person at the counter. A result attached to the wrong patient can only be voided, never deleted.</p>
           <div className="readback">
             <span className="readback__name">{sel.patient}</span>
-            <span className="tabular">Patient ID {sel.patientId} · {sel.age} · {sel.sex} · {sel.municipality}</span>
+            <span>Patient ID <span className="tabular">{sel.patientId}</span> · {sel.age} · {sel.sex} · {sel.municipality}</span>
           </div>
           <label className="confirm">
             <input type="checkbox" checked={upload.confirmed}

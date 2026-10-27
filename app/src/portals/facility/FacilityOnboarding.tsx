@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
+import { TEST_META, TEST_TYPES, type TestType } from '../../domain/reference';
 import {
   Building2, Check, Clock, FileSearch, FileText, FlaskConical, Mail, Stethoscope,
   TriangleAlert, Upload, UserX, Users, type LucideIcon,
 } from 'lucide-react';
-import { BackButton, Button, Callout, Chip, ConfirmDialog, Icon, Pills, type DialogSpec } from '../../components/ui';
+import { BackButton, Button, Callout, Chip, ConfirmDialog, Icon, Pills, Tabs, type DialogSpec } from '../../components/ui';
 import { PrototypeBar, PrototypeLabel, SessionBar } from '../../components/PortalChrome';
 import { Link } from 'react-router-dom';
 import { useDemo } from '../../store/context';
 import { fmt, fmtDate } from '../../domain/time';
+import { useScreenFocus } from '../../components/useScreenFocus';
+import { Logo } from '../../components/Logo';
 
 /* This registration's reference. Submitting it (F2) puts it in the admin's verification
    queue (A1); the admin's decision shows here on F3. */
@@ -33,7 +36,7 @@ const TYPES: { label: FacilityType; icon: LucideIcon; caps: Caps }[] = [
    facility can be booked. Type stays as a display and licensing label. */
 interface Caps { refer: boolean; receive: boolean }
 const CAP_ROWS: { key: keyof Caps; label: string; help: string }[] = [
-  { key: 'refer', label: 'Refers appointments out', help: 'This facility creates referred appointments and sends patients to other facilities. Its staff get an outgoing queue.' },
+  { key: 'refer', label: 'Refers appointments out', help: 'This facility has doctors who see patients and send them to other facilities. Patients can book a doctor visit here from their wallet. Its staff get an outgoing queue and a list of doctor visits.' },
   { key: 'receive', label: 'Receives appointments and offers tests', help: 'This facility accepts appointments booked by patients or referred by others, publishes its day schedule, and declares the tests it performs.' },
 ];
 
@@ -71,6 +74,8 @@ const STAFF_BADGE: Record<StaffStatus, { icon: LucideIcon; tone: string }> = {
    activate, then run its own staff list. */
 export function FacilityOnboarding() {
   const [screen, setScreen] = useState<Screen>('f1');
+  const [testQuery, setTestQuery] = useState('');
+  const [testType, setTestType] = useState<'All' | TestType | 'Ticked'>('All');
   const { state, now, submitRegistration } = useDemo();
   const registration = state.registrations.find(r => r.reference === REFERENCE);
   const [form, setFormState] = useState<Form>({
@@ -103,7 +108,7 @@ export function FacilityOnboarding() {
   const [dialog, setDialog] = useState<DialogSpec | null>(null);
 
   useEffect(() => { document.title = 'VITAL — Facility onboarding'; }, []);
-  useEffect(() => { window.scrollTo(0, 0); }, [screen]);
+  useScreenFocus([screen]);
 
   const setForm = (key: keyof Form, value: string) => setFormState(f => ({ ...f, [key]: value }));
   const toggleCap = (key: keyof Caps) => setCaps(c => ({ ...c, [key]: !c[key] }));
@@ -118,6 +123,9 @@ export function FacilityOnboarding() {
 
   const offered = tests.filter(t => t.offered);
   const referralOnly = offered.filter(t => t.referral);
+  const q = testQuery.trim().toLowerCase();
+  const shownTests = tests.filter(t => (testType === 'All' || (testType === 'Ticked' ? t.offered : typeOf(t.name) === testType))
+    && (!q || t.name.toLowerCase().includes(q) || (TEST_META.find(m => m.name === t.name)?.long.toLowerCase().includes(q) ?? false)));
   const testsSummary = offered.length === 0
     ? 'No tests declared yet. A facility with no declared tests never appears in patient facility search.'
     : `${offered.length} test${offered.length === 1 ? '' : 's'} declared`
@@ -156,7 +164,7 @@ export function FacilityOnboarding() {
         ? <SessionBar name="E. Bughao" line="Facility admin · Loon Heritage Clinical Lab" switchable={false} />
         : (
           <header className="public-bar">
-            <span className="session__brand">VITAL</span>
+            <span className="session__brand"><Logo height={22} /></span>
             <span className="session__line">Facility registration</span>
           </header>
         )}
@@ -207,13 +215,26 @@ export function FacilityOnboarding() {
                 <div>
                   <span className="group-label group-label--tight">Tests offered</span>
                   <p className="group-text">Tick every test this facility performs. Tick <span className="strong">needs RHU referral</span> where the test is only accepted when a rural health unit books it — a patient will not be able to book that test here from their wallet.</p>
+                  {/* A real catalogue has hundreds of tests: search by name, narrow by type. The
+                      list and its two ticks stay as they are. */}
+                  <div className="test-filters">
+                    <input className="input" type="search" aria-label="Search tests" placeholder="Search tests, e.g. CBC"
+                      value={testQuery} onChange={e => setTestQuery(e.target.value)} />
+                    <Tabs<'All' | TestType | 'Ticked'> label="Test type" value={testType} onChange={setTestType}
+                      items={(['All', ...TEST_TYPES, 'Ticked'] as const).map(k => ({
+                        id: k, label: k,
+                        count: tests.filter(t => k === 'All' || (k === 'Ticked' ? t.offered : typeOf(t.name) === k)).length,
+                      }))} />
+                  </div>
                   <div className="table-card">
-                    {tests.map((t, i) => (
+                    {shownTests.length === 0 && <p className="muted small test-row">No test matches “{testQuery}”.</p>}
+                    {tests.map((t, i) => !shownTests.includes(t) ? null : (
                       <div key={t.name} className={t.offered ? 'test-row test-row--on' : 'test-row'}>
                         <label className="test-row__name">
                           <input type="checkbox" checked={t.offered}
                             onChange={e => setTests(ts => ts.map((q, j) => j === i ? { ...q, offered: e.target.checked, referral: e.target.checked ? q.referral : false } : q))} />
                           <span className={t.offered ? 'strong' : undefined}>{t.name}</span>
+                          <span className="muted xs">{typeOf(t.name)}</span>
                         </label>
                         <label className={['test-row__ref', !t.offered && 'test-row__ref--off', t.referral && 'amber'].filter(Boolean).join(' ')}>
                           <input type="checkbox" checked={t.referral} disabled={!t.offered}
@@ -467,3 +488,8 @@ export function FacilityOnboarding() {
     </div>
   );
 }
+
+function typeOf(name: string): TestType | undefined {
+  return TEST_META.find(m => m.name === name)?.type;
+}
+

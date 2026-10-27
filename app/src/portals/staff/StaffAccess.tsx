@@ -6,6 +6,8 @@ import { PrototypeBar, PrototypeLabel } from '../../components/PortalChrome';
 import { PinInput } from '../../components/PinInput';
 import { useDemo } from '../../store/context';
 import { EMAIL_DOMAINS, STAFF, capabilitiesOf, facility as facilityNamed, portalFor, staffOf } from '../../domain/reference';
+import { useScreenFocus } from '../../components/useScreenFocus';
+import { Logo } from '../../components/Logo';
 
 type Screen = 's1' | 's2' | 's3' | 's4';
 const SCREENS: { id: Screen; label: string }[] = [
@@ -47,6 +49,7 @@ export function StaffAccess() {
   const [switched, setSwitched] = useState<string | null>(null);
 
   useEffect(() => { document.title = 'VITAL — Staff access'; }, []);
+  useScreenFocus([screen]);
 
   const setScreen = (id: Screen) => { setPinError(false); setSwitched(null); setScreenRaw(id); };
 
@@ -90,7 +93,7 @@ export function StaffAccess() {
       <main className="centered">
         {screen === 's1' && (
           <div className="auth">
-            <span className="auth__brand">VITAL</span>
+            <span className="auth__brand"><Logo height={28} /></span>
             <h1 className="page-title upload__title">Sign in</h1>
             <p className="page-sub">Use the work email your facility admin invited.</p>
             <form className="card form" onSubmit={e => { e.preventDefault(); signIn(); }}>
@@ -142,7 +145,7 @@ export function StaffAccess() {
 
         {screen === 's2' && (
           <div className="auth auth--460">
-            <span className="auth__brand">VITAL</span>
+            <span className="auth__brand"><Logo height={28} /></span>
             <h1 className="page-title upload__title">Set up your account</h1>
             <p className="page-sub">E. Bughao invited you to Loon Heritage Clinical Lab as Staff. This link expires 48 hours after it was sent.</p>
             <div className="card stack">
@@ -182,7 +185,7 @@ export function StaffAccess() {
 
         {screen === 's3' && (
           <div className="auth">
-            <span className="auth__brand">VITAL</span>
+            <span className="auth__brand"><Logo height={28} /></span>
             <BackButton onClick={() => setScreen('s1')}>Sign in</BackButton>
             <h1 className="page-title upload__title">Reset your password</h1>
             <p className="page-sub">A reset link is sent to your work email. It expires after one hour.</p>
@@ -215,7 +218,7 @@ export function StaffAccess() {
         {screen === 's4' && (
           <div className="auth auth--520">
             <div className="auth__locked">
-              <span className="session__brand">VITAL</span>
+              <span className="session__brand"><Logo height={22} /></span>
               <span className="badge badge--attention"><Icon icon={Lock} size={14} /> Terminal locked</span>
             </div>
             <div className="card stack">

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MBack, MBadge, MButton, MHead, Ms, Phone, PhoneStage } from '../../components/Phone';
+import { useScreenFocus } from '../../components/useScreenFocus';
+import { LogoMark } from '../../components/Logo';
 
 type Screen = 'w1' | 'w2' | 'w3' | 'w4' | 'w5' | 'w6' | 'done' | 'notme';
 type Path = 'direct' | 'invited';
@@ -55,7 +57,7 @@ export function PatientOnboarding() {
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => { document.title = 'VITAL — Patient onboarding'; }, []);
-  useEffect(() => { window.scrollTo(0, 0); }, [screen]);
+  useScreenFocus([screen]);
 
   /* The resend countdown only runs while the code screen is open. */
   useEffect(() => {
@@ -119,6 +121,7 @@ export function PatientOnboarding() {
       <Phone headerEnd={step}>
         {screen === 'w1' && (
           <div className="screen screen--fill">
+            <LogoMark size={64} />
             <MHead title="Your health record, in your hands">
               <p className="mlead">VITAL keeps your appointments and results in one place on your phone, and lets you decide which health centres and laboratories can read them.</p>
             </MHead>
@@ -156,10 +159,11 @@ export function PatientOnboarding() {
               <div className="phone-input">
                 <span className="tabular">+63</span>
                 <input id="phone" type="tel" inputMode="numeric" value={phoneText} placeholder="9XX XXX XXXX"
+                  aria-describedby="phone-hint" aria-invalid={digits.length > 0 && !phoneValid}
                   onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
                   onKeyDown={e => { if (e.key === 'Enter') sendCode(); }} />
               </div>
-              <span className={digits.length > 0 && !phoneValid ? 'msmall amber' : 'msmall'}>
+              <span id="phone-hint" aria-live="polite" className={digits.length > 0 && !phoneValid ? 'msmall amber' : 'msmall'}>
                 {digits.length === 0 ? 'Start with 9. Ten digits after +63.'
                   : phoneValid ? 'We will text a six-digit code to this number.'
                     : 'That is not a complete Philippine mobile number yet.'}
@@ -183,13 +187,14 @@ export function PatientOnboarding() {
                 {otp.map((v, i) => (
                   <input key={i} ref={el => { otpRefs.current[i] = el; }} type="tel" inputMode="numeric" maxLength={1}
                     className={otpError ? 'otp__box otp__box--error' : 'otp__box'} value={v} aria-label={`Code digit ${i + 1}`}
+                    aria-invalid={otpError} aria-describedby="otp-message"
                     autoComplete={i === 0 ? 'one-time-code' : 'off'}
                     onChange={e => setDigit(i, e.target.value)}
                     onKeyDown={e => { onOtpKey(i, e.key); if (e.key === 'Enter') verify(); }}
                     onPaste={e => { if (onOtpPaste(e.clipboardData.getData('text'))) e.preventDefault(); }} />
                 ))}
               </div>
-              <span className={otpError ? 'msmall clay' : 'msmall'}>
+              <span id="otp-message" role={otpError ? 'alert' : undefined} className={otpError ? 'msmall clay' : 'msmall'}>
                 {otpError
                   ? 'That code does not match. Check the text message or ask for a new code.'
                   : `The demo code is ${DEMO_CODE}.`}
@@ -200,7 +205,7 @@ export function PatientOnboarding() {
               {resendIn <= 0 ? (
                 <MButton variant="outline" onClick={() => { setResendIn(45); setOtp(EMPTY_OTP); setOtpError(false); }}>Send a new code</MButton>
               ) : (
-                <span className="msmall mfine--center tabular">You can ask for a new code in 0:{String(resendIn).padStart(2, '0')}</span>
+                <span className="msmall mfine--center">You can ask for a new code in <span className="tabular">0:{String(resendIn).padStart(2, '0')}</span></span>
               )}
             </div>
           </div>

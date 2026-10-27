@@ -1,31 +1,63 @@
+import { useState } from 'react';
 import { TEST_META, type RankedFacility } from '../../domain/reference';
 import { fmtSlot } from '../../domain/time';
+import { AutoTimeField } from '../../components/AutoTimeField';
 import { MBack, MBadge, MButton, MHead, Ms } from '../../components/Phone';
 import { SummaryBlock } from './screens';
 import type { Wallet } from './useWallet';
 
 /* ---------- P6 Choose tests ---------- */
 
+/* A real catalogue has hundreds of tests, so they are searched and added, not ticked from a
+   list. Chosen tests sit on top as chips that can be removed. */
+function TestSearch({ chosen, onToggle }: { chosen: string[]; onToggle: (name: string) => void }) {
+  const [q, setQ] = useState('');
+  const t = q.trim().toLowerCase();
+  const hits = TEST_META.filter(m => !chosen.includes(m.name)
+    && (!t || m.name.toLowerCase().includes(t) || m.long.toLowerCase().includes(t))).slice(0, t ? 8 : 4);
+  return (
+    <div className="mstack">
+      {chosen.length > 0 && (
+        <div className="mchips" aria-label="Your tests">
+          {chosen.map(n => (
+            <button key={n} type="button" className="mtestchip" onClick={() => onToggle(n)} aria-label={`Remove ${n}`}>
+              {n}<Ms glyph="close" size={18} />
+            </button>
+          ))}
+        </div>
+      )}
+      <label className="msearch" htmlFor="test-search">
+        <Ms glyph="search" size={20} />
+        <input id="test-search" type="search" value={q} placeholder="Search tests, e.g. CBC or urinalysis" onChange={e => setQ(e.target.value)} />
+      </label>
+      <span className="mday__label">{t ? 'Matching tests' : 'Common tests'}</span>
+      {hits.length ? (
+        <div className="mentries mentries--card">
+          {hits.map(m => (
+            <button key={m.name} type="button" className="mentry" onClick={() => { onToggle(m.name); setQ(''); }}>
+              <span className="mentry__text">
+                <span className="mentry__title">{m.name}</span>
+                {m.long !== m.name && <span className="mentry__meta">{m.long}</span>}
+              </span>
+              <span className="mtestadd"><Ms glyph="add" size={20} />Add</span>
+            </button>
+          ))}
+        </div>
+      ) : <p className="mempty">No test matches “{q}”. Check the spelling on your request slip.</p>}
+    </div>
+  );
+}
+
 export function BookTests({ w }: { w: Wallet }) {
   const { tests } = w.booking;
   const needsReferral = tests.some(x => TEST_META.some(m => m.name === x && m.needsReferral));
   return (
     <div className="screen">
-      <MBack onClick={() => w.setScreen('home')}>Wallet home</MBack>
-      <MHead title="What do you need?">
-        <p className="mlead">Choose one or more tests. You can change this later.</p>
+      <MBack onClick={() => w.setScreen('bookStart')}>What do you need?</MBack>
+      <MHead title="Which tests?">
+        <p className="mlead">Choose the tests on your lab request. You can change this later.</p>
       </MHead>
-      <div className="mstack mstack--8">
-        {TEST_META.map(t => {
-          const on = tests.includes(t.name);
-          return (
-            <button key={t.name} type="button" className="mchoice" aria-pressed={on} onClick={() => w.toggleTest(t.name)}>
-              <Ms glyph={on ? 'check_box' : 'check_box_outline_blank'} />
-              <span>{t.name}</span>
-            </button>
-          );
-        })}
-      </div>
+      <TestSearch chosen={tests} onToggle={w.toggleTest} />
       {needsReferral && (
         <div className="mpanel mpanel--row">
           <Ms glyph="assignment" className="forest" />
@@ -58,7 +90,6 @@ function FacilityCard({ w, f }: { w: Wallet; f: RankedFacility }) {
           <Ms glyph="assignment_late" size={20} />Needs a referral from your health centre for {f.referralOnly.join(', ')}
         </span>
       )}
-      {f.partner && <span className="mchip"><Ms glyph="handshake" size={14} />Partner facility</span>}
     </button>
   );
 }
@@ -89,7 +120,7 @@ export function BookFacility({ w }: { w: Wallet }) {
         </div>
       )}
 
-      <p className="mfine m0">Facilities that offer every test you chose are always listed first, whether or not they pay for a partner listing.</p>
+      <p className="mfine m0">Facilities that offer every test you chose are listed first, then the nearest. No facility can pay to be listed higher.</p>
 
       {book.hasBlocked && book.blockedTests.length > 0 && (
         <div className="mnotice mnotice--amber mnotice--row">
@@ -103,24 +134,21 @@ export function BookFacility({ w }: { w: Wallet }) {
 
       <div className="mstack">
         <h2 className="mh2">Pick a time</h2>
-        <p className="mlead mlead--muted">{booking.facility ? `Times published by ${booking.facility}` : 'Pick a time'}</p>
-        {book.slots.length > 0 ? (
-          <div className="mwrap">
-            {book.slots.map(m => (
-              <button key={m} type="button" className="mslot" aria-pressed={book.slot === m}
-                onClick={() => w.setBooking({ slot: m })}>{fmtSlot(m)}</button>
-            ))}
-          </div>
-        ) : (
-          <p className="mlead">
-            {booking.facility
-              ? 'This facility has not published any times for the coming days.'
-              : 'Choose a facility above to see the times it has published.'}
-          </p>
-        )}
+        <p className="mlead mlead--muted">{booking.facility ? `Let VITAL pick the time with the shortest wait, or choose your own. ${booking.facility} checks it against its schedule.` : 'Choose a facility first.'}</p>
+        {booking.facility
+          ? <AutoTimeField key={booking.facility} id="booking-slot" mobile lab={booking.facility} tests={booking.tests} now={w.now}
+              value={booking.slot} auto={booking.autoTime} onChange={(m, auto) => w.setBooking({ slot: m, autoTime: auto })} />
+          : null}
       </div>
 
       {book.summary && <div className="mpanel mpanel--12"><SummaryBlock summary={book.summary} /></div>}
+
+      <div className="mstack mstack--8">
+        <label htmlFor="referredBy" className="strong">Referred by (optional)</label>
+        <input id="referredBy" type="text" className="minput minput--48" value={booking.referredBy}
+          onChange={e => w.setReferredBy(e.target.value)} placeholder="Name of the clinic or doctor who sent you" />
+        <span className="mfine">For the facility's reference. This does not give them access to your records.</span>
+      </div>
 
       <MButton disabled={!book.canBook} onClick={w.confirmBooking}>Book appointment</MButton>
     </div>
@@ -152,17 +180,11 @@ export function Booked({ w }: { w: Wallet }) {
           </div>
         )}
         <div className="mkv"><span className="mfield-label">Time</span><span className="strong tabular">{booking.slot !== null ? fmtSlot(booking.slot) : ''}</span></div>
+        {booking.referredBy.trim() && <div className="mkv"><span className="mfield-label">Referred by</span><span className="strong">{booking.referredBy}</span></div>}
         <div className="mkv"><span className="mfield-label">Reference</span><span className="strong tabular">{booking.id}</span></div>
       </div>
 
-      <div className="mstack mstack--8">
-        <label htmlFor="referredBy" className="strong">Referred by (optional)</label>
-        <input id="referredBy" type="text" className="minput minput--48" value={booking.referredBy}
-          onChange={e => w.setReferredBy(e.target.value)} placeholder="Name of the clinic or provider" />
-        <span className="mfine">For the facility's reference. This does not give them access to your records.</span>
-      </div>
-
-      <MButton onClick={() => w.setScreen('home')}>Back to wallet home</MButton>
+      <MButton onClick={() => w.setScreen('appointments')}>See my appointments</MButton>
     </div>
   );
 }

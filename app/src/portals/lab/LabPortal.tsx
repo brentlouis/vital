@@ -1,14 +1,19 @@
 import { useEffect } from 'react';
-import { ConfirmDialog, Pills } from '../../components/ui';
+import { ConfirmDialog, Pills, Toast } from '../../components/ui';
 import { PrototypeBar, PrototypeLabel, SessionBar } from '../../components/PortalChrome';
 import { FacilityBell } from '../../components/FacilityBell';
 import { CONFIGS, useLab, type Screen } from './useLab';
-import { Queue } from './screens/Queue';
+import { LabWorkspace, Queue } from './screens/Queue';
 import { Detail } from './screens/Detail';
 import { UploadResult } from './screens/UploadResult';
 import { DaySchedule } from './screens/DaySchedule';
 import { AccessDenied } from '../../components/AccessDenied';
 import { ReferralForm } from '../../components/referral/ReferralForm';
+import { useScreenFocus } from '../../components/useScreenFocus';
+import { PortalNav } from '../../components/PortalNav';
+import { useWide } from '../../components/useWide';
+import { CalendarDays, CreditCard, FilePlus, Inbox, MessageSquareWarning } from 'lucide-react';
+import { PlanUsage, ReportProblem } from '../../components/FacilityAccount';
 
 type ScreenPill = Screen | 'noshow';
 
@@ -33,7 +38,12 @@ export function LabPortal() {
 
   useEffect(() => { document.title = 'VITAL — Laboratory portal'; }, []);
   /* Each screen change starts at the top, as a page navigation would. */
-  useEffect(() => { window.scrollTo(0, 0); }, [screen, selected?.id]);
+  useScreenFocus([screen, selected?.id]);
+
+  const wide = useWide();
+  type NavId = 'queue' | 'day' | 'new' | 'plan' | 'report';
+  const navValue: NavId | null = (['day', 'new', 'plan', 'report'] as Screen[]).includes(screen) ? screen as NavId : 'queue';
+  const goNav = (id: NavId) => lab.setScreen(id);
 
   const activePill: ScreenPill = screen === 'detail' && selected?.status === 'No-show' ? 'noshow' : screen;
   const goPill = (id: ScreenPill) => (id === 'noshow' ? lab.openFirst('No-show') : lab.setScreen(id));
@@ -50,18 +60,40 @@ export function LabPortal() {
         <Pills items={[...CONFIGS]} value={lab.signedIn} onChange={lab.pickConfig} />
       </PrototypeBar>
 
+      <div className="portal__body">
+      <PortalNav<NavId> label="Laboratory" value={navValue} onChange={goNav} items={[
+        { id: 'queue', label: lab.merged ? 'Appointments' : 'Incoming queue', icon: Inbox, count: lab.buckets.New.length },
+        { id: 'day', label: 'Day schedule', icon: CalendarDays },
+        ...(lab.merged ? [{ id: 'new' as const, label: 'New appointment', icon: FilePlus }] : []),
+        { id: 'plan', label: 'Plan and usage', icon: CreditCard },
+        { id: 'report', label: 'Report a problem', icon: MessageSquareWarning },
+      ]} footer={
+        /* A person with accounts at more than one facility switches between them here. */
+        <label className="pnav__facility">
+          <span className="pnav__facility-label">Facility</span>
+          <select className="input" value={lab.signedIn} onChange={e => lab.pickConfig(e.target.value)}>
+            {CONFIGS.map(c => <option key={c.id} value={c.id}>{c.id}</option>)}
+          </select>
+          <span className="pnav__facility-hint">{lab.merged ? 'Clinic · refers and receives' : 'Laboratory · receives only'}</span>
+        </label>
+      } />
       <main className="portal__main">
-        {screen === 'queue' && <Queue lab={lab} />}
-        {screen === 'detail' && selected && <Detail lab={lab} sel={selected} />}
+        {wide && (screen === 'queue' || screen === 'detail') && <LabWorkspace lab={lab} />}
+        {!wide && screen === 'queue' && <Queue lab={lab} />}
+        {!wide && screen === 'detail' && selected && <Detail lab={lab} sel={selected} />}
         {screen === 'upload' && selected && <UploadResult lab={lab} sel={selected} />}
         {screen === 'day' && <DaySchedule lab={lab} />}
+        {screen === 'plan' && <PlanUsage facility={lab.signedIn} />}
+        {screen === 'report' && <ReportProblem facility={lab.signedIn} staff={lab.viewer.name} />}
         {screen === 'new' && lab.merged && (
           <ReferralForm rf={lab.referral} onSend={lab.sendReferral} onDiscard={() => lab.setScreen('queue')} backLabel="Appointment queue" />
         )}
         {screen === 'denied' && <AccessDenied facility={lab.signedIn} backLabel="Queue" onBack={() => lab.setScreen('queue')} />}
       </main>
+      </div>
 
       <ConfirmDialog spec={lab.dialog} onClose={() => lab.setDialog(null)} />
+      <Toast toast={lab.toast} onClose={() => lab.setToast(null)} />
     </div>
   );
 }

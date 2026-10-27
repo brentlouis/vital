@@ -22,6 +22,11 @@ function forPatient(a: AppointmentRecord, now: Minute): Notice[] {
     if (e.facility === 'Health wallet') return;
     const push = (kind: string, message: string, tone: Notice['tone'] = 'forest') =>
       out.push({ at: e.at, kind, message, appointmentId: a.id, tone });
+    /* A withdrawn confirmation is the one undo the patient was told about, so they hear it. */
+    if (e.withdraws) {
+      if (e.status === 'Accepted') push('Confirmation withdrawn', `${a.lab} took back a confirmation it made by mistake. Your appointment is waiting for ${a.lab} to confirm it.`, 'amber');
+      return;
+    }
     if (i === 0 && a.origin !== 'Personal') push('Scheduled', `${a.fromFacility ?? RHU} scheduled an appointment for you on ${day}.`);
     if (e.status === 'Reschedule proposed' && e.slot !== undefined) push('New time proposed', `${a.lab} proposed a new time for your appointment: ${fmt(e.slot)}.`, 'amber');
     if (e.status === 'Accepted' && i > 0) push('Confirmed', `${a.lab} confirmed your appointment.`);
@@ -48,6 +53,10 @@ function forFacility(a: AppointmentRecord, facility: string): Notice[] {
     if (e.facility === facility) return;
     const push = (kind: string, message: string, tone: Notice['tone'] = 'forest') =>
       out.push({ at: e.at, kind, message, appointmentId: a.id, tone });
+    if (e.withdraws) {
+      if (ordered && e.status === 'Accepted') push('Acceptance withdrawn', `${a.lab} withdrew its acceptance of ${who}’s appointment. It is waiting for the laboratory again.`, 'amber');
+      return;
+    }
     if (receives) {
       if (i === 0) push('New appointment', `${a.origin === 'Personal' ? `${givenFirst(who)} booked` : `${a.fromFacility} sent`} ${a.tests.join(', ')} for ${fmt(a.slot)}.`);
       if (e.status === 'Accepted' && e.facility === 'Health wallet') push('New time accepted', `${who} accepted the proposed time, ${fmt(a.slot)}.`);

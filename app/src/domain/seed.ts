@@ -3,11 +3,11 @@
    flow table, so a story cannot name the wrong person. No record is re-pointed or borrowed —
    every portal shows these same records. flow.test.ts replays every story against the rules. */
 
-import { RHU, PEOPLE, WALLET_PATIENT, defaultStaff, givenFirst, person } from './reference';
+import { RHU, PEOPLE, VISIT, WALLET_PATIENT, defaultStaff, givenFirst, person } from './reference';
 import { START, STEPS, shownStatus, type Role } from './flow';
 import { at, type Minute } from './time';
 import type {
-  AppointmentRecord, EventStatus, Origin, Registration, Result, StandingGrant, TrailEvent,
+  AppointmentRecord, AuditEntry, EventStatus, HistoryGrant, Issue, Origin, PriorityReason, Registration, Result, StandingGrant, TrailEvent,
 } from './types';
 
 const TDC = 'Tagbilaran Diagnostic Center';
@@ -32,6 +32,10 @@ interface Story {
   referredBy?: string;
   slot: Minute;
   beats: Beat[];
+  kind?: 'Consultation';
+  fromVisit?: string;
+  priority?: PriorityReason;
+  autoTime?: boolean;
 }
 
 /* Which role wrote each event: the start event's writer for the first, otherwise the only
@@ -60,6 +64,9 @@ function build(s: Story): AppointmentRecord {
     fromFacility: s.origin === 'Personal' ? null : (s.from ?? RHU),
     lab: s.lab, tests: s.tests, note: s.note, referredBy: s.referredBy ?? null,
     slot: s.slot, trail: [], results: [],
+    ...(s.kind ? { kind: s.kind } : {}), ...(s.fromVisit ? { fromVisit: s.fromVisit } : {}),
+    ...(s.priority ? { priority: s.priority } : {}),
+    ...(s.autoTime ? { autoTime: true } : {}),
   };
   let n = 0;
   s.beats.forEach(([status, minute, extra], i) => {
@@ -99,7 +106,7 @@ const STORIES: Story[] = [
     note: 'Booked directly from the health wallet.', referredBy: 'Dr. Ofelia Carcallas, Loon district clinic',
     slot: at(1, '10:00'), beats: [['Booked', -240]] },
   { id: 'APT-404', patient: 25, origin: 'Referred', lab: LH, tests: ['Urinalysis'],
-    note: 'Follow-up after antibiotic course.', slot: at(2, '08:30'),
+    note: 'Follow-up after antibiotic course.', slot: at(2, '08:30'), autoTime: true,
     beats: [['Sent', -1000], ['Received', -900]] },
   { id: 'APT-405', patient: 12, origin: 'Referred', lab: LH, tests: ['CBC'],
     note: 'Pre-operative clearance.', slot: at(1, '07:00'),
@@ -148,7 +155,7 @@ const STORIES: Story[] = [
   { id: 'APT-417', patient: 3, origin: 'Referred', lab: TDC, tests: ['Chest X-ray'],
     note: 'Persistent cough, three weeks. Rule out pulmonary tuberculosis.', slot: at(-4, '07:30'),
     beats: [['Sent', -7400], ['Received', -7300], ['Accepted', -7280]] },
-  { id: 'APT-418', patient: 1, origin: 'Referred', lab: TDC, tests: ['Sputum smear'],
+  { id: 'APT-418', patient: 1, origin: 'Referred', lab: TDC, tests: ['Sputum smear'], priority: 'Urgent clinical need',
     note: 'Cough and night sweats.', slot: at(1, '08:00'),
     beats: [['Sent', -90]] },
   { id: 'APT-419', patient: 7, origin: 'Personal', lab: TDC, tests: ['Fasting blood sugar', 'Lipid profile'],
@@ -182,9 +189,9 @@ const STORIES: Story[] = [
       ['Patient arrived', at(-3, '07:40')], ['Endorsed', at(-3, '11:00')], ['Completed', at(-3, '16:10')]] },
 
   /* ---------- Loon RHU referrals to the other laboratories ---------- */
-  { id: 'APT-427', patient: 0, origin: 'Referred', lab: PIM, tests: ['CBC'],
+  { id: 'APT-427', patient: 0, origin: 'Referred', lab: PIM, tests: ['CBC'], fromVisit: 'APT-435',
     note: 'Pallor and fatigue since July. Anaemia workup.', slot: at(1, '08:30'),
-    beats: [['Sent', -1700], ['Received', -1650], ['Accepted', -1640]] },
+    beats: [['Sent', at(-3, '09:45')], ['Received', -1650], ['Accepted', -1640]] },
   { id: 'APT-428', patient: 5, origin: 'Referred', lab: LRL, tests: ['Fasting blood sugar'],
     note: 'Known diabetic, no reading since March.', slot: at(-2, '09:00'),
     beats: [['Sent', -6200], ['Received', -6100], ['Accepted', -6090]] },
@@ -205,6 +212,22 @@ const STORIES: Story[] = [
   { id: 'APT-433', patient: 28, origin: 'Referred', lab: BPD, tests: ['Sputum smear'],
     note: 'Cough and night sweats, three weeks.', slot: at(0, '08:30'),
     beats: [['Sent', -2900], ['Received', -2800], ['Accepted', -2790], ['Patient arrived', at(0, '08:40')]] },
+
+  /* ---------- Doctor visits: booked by patients, seen at a facility with doctors ---------- */
+  /* The wallet patient saw the RHU doctor, who referred her for the CBC (APT-427). */
+  { id: 'APT-435', patient: 0, origin: 'Personal', kind: 'Consultation', lab: RHU, tests: [VISIT],
+    note: 'Feeling tired and dizzy for a few weeks.', slot: at(-3, '09:00'),
+    beats: [['Booked', at(-5, '18:20')], ['Received', at(-4, '08:05')], ['Accepted', at(-4, '08:06')],
+      ['Patient arrived', at(-3, '09:04')], ['Completed', at(-3, '09:40')]] },
+  { id: 'APT-436', patient: 10, origin: 'Personal', kind: 'Consultation', lab: RHU, tests: [VISIT],
+    note: 'Cough for a week, no fever.', slot: at(1, '09:00'),
+    beats: [['Booked', -300]] },
+  { id: 'APT-437', patient: 5, origin: 'Personal', kind: 'Consultation', lab: RHU, tests: [VISIT],
+    note: 'Blood sugar check-up.', slot: at(0, '10:00'),
+    beats: [['Booked', -2000], ['Received', -1900], ['Accepted', -1890]] },
+  { id: 'APT-438', patient: 24, origin: 'Personal', kind: 'Consultation', lab: TDC, tests: [VISIT],
+    note: 'Headaches in the afternoon.', slot: at(1, '08:30'),
+    beats: [['Booked', -500], ['Received', -450]] },
 
   /* ---------- The wallet patient's history ---------- */
   { id: 'APT-434', patient: 0, origin: 'Personal', lab: TDC, tests: ['Pregnancy test'],
@@ -266,4 +289,27 @@ export const SEED_REGISTRATIONS: Registration[] = [
 ];
 
 /* The next number each new appointment takes. */
-export const FIRST_NEW_ID = 435;
+export const FIRST_NEW_ID = 439;
+
+/* The wallet patient shares her history with her health centre from the wallet, so its
+   doctor sees her earlier results at a visit. Nobody else has it. */
+/* Problems facilities reported to the VITAL team. */
+export const SEED_ISSUES: Issue[] = [
+  { id: 'ISS-101', facility: LH, by: 'M. Cabahug', at: at(-2, '14:20'), topic: 'Wrong or missing data',
+    text: 'A urinalysis result was attached to the wrong patient (APT-408). We voided it and uploaded the right one; please check the patient was not shown the wrong file.',
+    status: 'Resolved', resolvedAt: at(-1, '09:10'), resolution: 'Checked the audit log: the patient opened only the corrected result. No further action.' },
+  { id: 'ISS-102', facility: TDC, by: 'R. Piezas', at: at(0, '08:05'), topic: 'Something does not work',
+    text: 'Patients ask whether they can bring a printed copy of the result. Can the wallet show a simple way to download it?',
+    status: 'Open' },
+];
+
+/* Access checks already in the log: the health centre doctor opening the wallet patient's
+   shared history at her visit, and a laboratory refused a record it was never given. */
+export const SEED_AUDIT: AuditEntry[] = [
+  { at: at(-3, '09:06'), actor: 'J. Bacarro', facility: RHU, patientId: WALLET_PATIENT.id, action: 'History viewed' },
+  { at: at(-1, '15:22'), actor: 'C. Olaivar', facility: DBL, patientId: PEOPLE[3].id, action: 'Access denied' },
+];
+
+export const SEED_HISTORY_GRANTS: HistoryGrant[] = [
+  { patientId: WALLET_PATIENT.id, facility: RHU, granted: at(-30, '10:00'), appointmentId: null, by: 'Health wallet' },
+];

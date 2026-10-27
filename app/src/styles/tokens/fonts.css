@@ -1,10 +1,9 @@
 /* VITAL webfonts.
-   Faire Octave (display serif) and Suisse Intl (UI sans) are commercially
-   licensed and are NOT shipped here. Per DESIGN.md §2.1 the substitutes are
-   authoritative for all prototyping and pilot work:
-     Faire Octave -> Cormorant Garamond 300
-     Suisse Intl  -> Inter 400/500/600
-   Both are served from Google Fonts. If licensed binaries become available,
-   drop them in assets/fonts/ and replace the @import below with @font-face
-   rules pointing at them; keep the family names in tokens/typography.css. */
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@400;500;600&display=swap");
+   Atkinson Hyperlegible Next (text) and Atkinson Hyperlegible Mono (data), from the
+   Braille Institute. Chosen for the people who read VITAL: patients on budget Android
+   screens, many with low literacy or low vision, and staff reading patient IDs aloud at a
+   counter. Its letterforms keep I, l and 1, and 0 and O, apart, which matters most in
+   identifiers such as PH-3318-0924 and APT-435. One superfamily replaces the earlier
+   Inter + Cormorant Garamond pair; the serif was too light for cheap screens.
+   Only the weights in use are loaded, with swap so text is never invisible. */
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&display=swap");

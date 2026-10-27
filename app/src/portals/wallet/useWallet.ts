@@ -1,22 +1,34 @@
 import { useCallback, useMemo, useState } from 'react';
 import { patientViewer, useDemo } from '../../store/context';
 import { isTerminal } from '../../domain/flow';
-import { RHU, WALLET_PATIENT, facility as facilityNamed, publishedSlots, rankFacilities } from '../../domain/reference';
+import { RHU, VISIT, WALLET_PATIENT, facility as facilityNamed, plainTests, rankFacilities } from '../../domain/reference';
+import { historyGrant } from '../../domain/access';
 import { UNSEEN_FROM, noticesFor, seenKey, type Notice } from '../../domain/notify';
-import { fmt, fmtDate, type Minute } from '../../domain/time';
+import { DAY, fmt, fmtDate, fmtDay, type Minute } from '../../domain/time';
 import { toView, type Appointment } from '../../domain/view';
+import { estimateFor } from '../../domain/estimate';
 import type { AppointmentRecord, Status } from '../../domain/types';
 
+/* The screens the tab bar opens. */
+export const TAB_SCREENS: Screen[] = ['home', 'appointments', 'docs', 'consent', 'profile'];
+export const TAB_LABEL: Partial<Record<Screen, string>> = {
+  home: 'Home', appointments: 'Appointments', docs: 'Documents', consent: 'Access', profile: 'Details',
+};
+
 export type Screen =
-  | 'home' | 'detail' | 'docs' | 'consent' | 'revoke' | 'bookTests' | 'bookFacility'
-  | 'booked' | 'profile' | 'notifications' | 'proposed';
+  | 'home' | 'appointments' | 'detail' | 'docs' | 'consent' | 'revoke' | 'bookTests' | 'bookFacility'
+  | 'booked' | 'profile' | 'notifications' | 'proposed' | 'bookStart' | 'bookVisit' | 'visitBooked';
 
 export const SCREENS: { id: Screen; label: string }[] = [
   { id: 'home', label: 'P1 Wallet home' },
+  { id: 'appointments', label: 'P1b Appointments' },
   { id: 'detail', label: 'P2 Appointment detail' },
   { id: 'docs', label: 'P3 Documents' },
   { id: 'consent', label: 'P4 Consent' },
   { id: 'revoke', label: 'P5 Revoke access' },
+  { id: 'bookStart', label: 'P6a New — what do you need' },
+  { id: 'bookVisit', label: 'P6b New — doctor visit' },
+  { id: 'visitBooked', label: 'P8b Visit booked' },
   { id: 'bookTests', label: 'P6 New — tests' },
   { id: 'bookFacility', label: 'P7 New — facility' },
   { id: 'booked', label: 'P8 Booked' },
@@ -32,7 +44,7 @@ export type Hue = 'forest' | 'clay' | 'amber' | 'charcoal';
 export interface Plain { badge: string; line: string; glyph: string }
 
 /* Who closes the loop depends on the origin, so Completed reads differently for each. */
-type Origin = Pick<Appointment, 'origin' | 'fromFacility'>;
+type Origin = Pick<Appointment, 'origin' | 'fromFacility'> & { visit?: boolean };
 
 function completedLine(o?: Origin): string {
   if (o?.origin === 'Personal') return 'You opened your result. This appointment is finished.';
@@ -49,6 +61,11 @@ export function plain(status: Status, lab: string, past = false, o?: Origin): Pl
   }
   if (past && status === 'Accepted') {
     return { badge: 'Ready for you', line: `Your time at ${lab} was confirmed.`, glyph: 'event_available' };
+  }
+  if (o?.visit) {
+    if (status === 'Patient arrived') return { badge: 'At your visit', line: `You checked in at ${lab} for your doctor visit.`, glyph: 'stethoscope' };
+    if (status === 'Completed') return { badge: 'Seen by the doctor', line: `You saw the doctor at ${lab}. Any tests they ordered are listed below.`, glyph: 'stethoscope_check' };
+    if (status === 'Accepted' && !past) return { badge: 'Ready for you', line: `${lab} has your visit in its schedule. Come at your time.`, glyph: 'event_available' };
   }
   const P: Record<Status, [string, string, string]> = {
     Sent: ['Sent to the laboratory', `${lab} has been asked to do this test.`, 'send'],
@@ -133,20 +150,34 @@ interface Booking {
   tests: string[];
   facility: string | null;
   slot: Minute | null;
+  /** VITAL picks the time; the patient chooses only the day. */
+  autoTime: boolean;
   referredBy: string;
   id: string | null;
 }
+
+/* Anything waiting on the patient comes first: a proposed time, which expires, then a
+   result only the patient can close. */
+const waitingOnPatient = (r: Appointment) =>
+  r.status === 'Reschedule proposed' ? 0 : r.origin === 'Personal' && r.status === 'Endorsed' ? 1 : 2;
 
 export function useWallet() {
   const demo = useDemo();
   const { state, now } = demo;
   const viewer = useMemo(() => patientViewer(WALLET_PATIENT.id), []);
   const [screen, setScreenRaw] = useState<Screen>('home');
+  /* The tab the patient last chose, so an appointment opened from it goes back to it. */
+  const [tab, setTab] = useState<Screen>('home');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [revokeKey, setRevokeKey] = useState<string | null>(null);
   const [booking, setBookingState] = useState<Booking>({
-    tests: ['CBC', 'Chest X-ray'], facility: 'Dauis Bayview Laboratory', slot: null, referredBy: '', id: null,
+    tests: [], facility: null, slot: null, autoTime: true, referredBy: '', id: null,
   });
+  /* A doctor visit being booked (P6b). */
+  const [visit, setVisitState] = useState<{ facility: string | null; slot: Minute | null; reason: string; id: string | null }>({
+    facility: null, slot: null, reason: '', id: null,
+  });
+  const setVisit = useCallback((patch: Partial<typeof visit>) => setVisitState(v => ({ ...v, ...patch })), []);
   const setBooking = useCallback((patch: Partial<Booking>) => setBookingState(b => ({ ...b, ...patch })), []);
   const key = seenKey(viewer);
   const seenAt = state.seen[key] ?? UNSEEN_FROM;
@@ -154,6 +185,7 @@ export function useWallet() {
   /* Opening notifications marks everything read. */
   const setScreen = useCallback((id: Screen) => {
     if (id === 'notifications') demo.markSeen(key);
+    if (TAB_SCREENS.includes(id)) setTab(id);
     setScreenRaw(id);
   }, [demo, key]);
 
@@ -162,8 +194,6 @@ export function useWallet() {
 
   /* Anything waiting on the patient comes first: a proposed time, which expires, then a
      result only the patient can close. */
-  const waitingOnPatient = (r: Appointment) =>
-    r.status === 'Reschedule proposed' ? 0 : r.origin === 'Personal' && r.status === 'Endorsed' ? 1 : 2;
   const active = useMemo(() => shown
     .filter(r => !isTerminal(r.status))
     .sort((a, b) => waitingOnPatient(a) - waitingOnPatient(b))
@@ -176,6 +206,12 @@ export function useWallet() {
     ? shown.find(r => r.status === 'Reschedule proposed') : picked)
     || picked || shown[0] || null;
 
+  /* A result row opens the appointment it belongs to, where the document is. */
+  const openById = useCallback((id: string) => {
+    setSelectedId(id);
+    setScreenRaw('detail');
+  }, []);
+
   const openAppointment = useCallback((r: Appointment) => {
     setSelectedId(r.id);
     setScreenRaw(r.status === 'Reschedule proposed' ? 'proposed' : 'detail');
@@ -184,11 +220,25 @@ export function useWallet() {
   const notes = useMemo(() => noticesFor(viewer, state.appointments, now), [viewer, state.appointments, now]);
   const unreadCount = notes.filter(n => n.at > seenAt).length;
 
-  /* Results released to the patient, newest first — voided ones stay, marked. */
+  /* Results released to the patient, newest first — voided ones stay, marked. A result is
+     new until the patient first opens it, for a week after release. */
   const documents = useMemo(() => mine.flatMap(a => a.results.map(r => ({
-    name: `${a.tests.join(', ')} result`, facility: a.lab, date: fmt(r.released), at: r.released,
-    voided: r.voidedAt !== undefined,
-  }))).sort((a, b) => b.at - a.at), [mine]);
+    name: `${plainTests(a.tests)} result`, facility: a.lab, date: fmt(r.released), at: r.released,
+    voided: r.voidedAt !== undefined, appointmentId: a.id, isNew: state.opened[a.id] === undefined && now - r.released <= 7 * DAY,
+  }))).sort((a, b) => b.at - a.at), [mine, state.opened, now]);
+
+  /* Home is the wallet's notifications, enlarged: only what needs the patient, what is
+     coming, what is being worked on, and what is new. Everything else is in the tabs. */
+  const home = useMemo(() => {
+    const needsYou = shown.filter(r => r.status === 'Reschedule proposed' || r.status === 'Overdue'
+      || (r.status === 'Declined' && now - r.updatedAt <= 3 * DAY))
+      .sort((a, b) => waitingOnPatient(a) - waitingOnPatient(b));
+    const comingUp = shown.filter(r => ['Sent', 'Booked', 'Received', 'Accepted'].includes(r.status))
+      .sort((a, b) => a.slot - b.slot);
+    const awaitingResult = shown.filter(r => r.status === 'Patient arrived' || (r.status === 'Result voided'));
+    const newResults = documents.filter(d => d.isNew && !d.voided);
+    return { needsYou, comingUp, awaitingResult, newResults };
+  }, [shown, documents, now]);
 
   /* Standing grants to referring facilities, then one line per appointment for the facility
      performing it — open ones while they run, and the most recent closed ones. */
@@ -208,14 +258,15 @@ export function useWallet() {
       const closedAt = a.trail[a.trail.length - 1].at;
       return {
         key: `appointment:${a.id}`, facility: a.lab, kind: 'Receiving facility' as const,
-        scope: `One appointment — ${a.tests.join(', ')}, ${a.id}`,
+        /* Named by what the patient remembers — the test and the day — never an internal ID. */
+        scope: `Your ${plainTests(a.tests)} appointment on ${fmtDay(a.slot)}, and its result`,
         granted: fmtDate(a.trail[0].at),
         until: open ? 'When this appointment closes' : v.status === 'Consent revoked' ? `Stopped ${fmtDate(closedAt)}` : `Closed ${fmtDate(closedAt)}`,
         active: open, revoke: { appointment: a.id },
       };
     });
     const openLines = perAppointment.filter(c => c.active);
-    const closedLines = perAppointment.filter(c => !c.active).slice(0, 2);
+    const closedLines = perAppointment.filter(c => !c.active);
     return [...standing, ...openLines, ...closedLines];
   }, [state.grants, mine, now]);
 
@@ -223,14 +274,14 @@ export function useWallet() {
      the same data L6 renders — never from a list of VITAL's own. */
   const book = useMemo(() => {
     const ranked = rankFacilities(booking.tests);
-    const slots = booking.facility ? publishedSlots(booking.facility, now) : [];
+
     const chosen = ranked.find(f => f.name === booking.facility);
-    const slot = booking.slot !== null && slots.includes(booking.slot) ? booking.slot : null;
+    const slot = booking.slot !== null && booking.slot > now ? booking.slot : null;
     const canBook = !!(booking.facility && slot !== null && booking.tests.length && !chosen?.blocked);
     const blocked = ranked.filter(f => f.blocked);
     const blockedTests = [...new Set(blocked.flatMap(f => f.referralOnly))];
     return {
-      ranked, slots, slot, chosen, canBook, blockedTests, hasBlocked: blocked.length > 0,
+      ranked, slot, chosen, canBook, blockedTests, hasBlocked: blocked.length > 0,
       summary: summaryFor(booking.facility, booking.tests),
     };
   }, [booking, now]);
@@ -254,6 +305,7 @@ export function useWallet() {
       referralRequired: booking.tests.filter(x => f.coverage.includes(x) && f.referralTests.includes(x)),
       note: 'Booked directly from the health wallet.',
       referredBy: booking.referredBy.trim() || null, slot: book.slot,
+      ...(booking.autoTime ? { autoTime: true } : {}),
     }, viewer);
     if (typeof made === 'string') return;
     setBooking({ id: made.id });
@@ -267,6 +319,23 @@ export function useWallet() {
     if (booking.id) demo.setReferredBy(booking.id, v.trim() || null);
   }, [setBooking, booking.id, demo]);
 
+  const startVisit = useCallback(() => {
+    setVisitState({ facility: null, slot: null, reason: '', id: null });
+    setScreenRaw('bookVisit');
+  }, []);
+
+  /* A doctor visit is a personal appointment of its own kind: it asks for no test. */
+  const confirmVisit = useCallback(() => {
+    if (!visit.facility || visit.slot === null) return;
+    const made = demo.create({
+      patientId: WALLET_PATIENT.id, origin: 'Personal', kind: 'Consultation', fromFacility: null, lab: visit.facility,
+      tests: [VISIT], note: visit.reason.trim() || 'No reason given.', referredBy: null, slot: visit.slot,
+    }, viewer);
+    if (typeof made === 'string') return;
+    setVisit({ id: made.id });
+    setScreenRaw('visitBooked');
+  }, [visit, demo, viewer, setVisit]);
+
   const openResult = useCallback((r: Appointment) => demo.openResult(r.id, viewer), [demo, viewer]);
 
   /* P11 can be reached before anything is selected, so both actions work off the
@@ -279,9 +348,16 @@ export function useWallet() {
     setScreenRaw('detail');
   }, [selected, demo, viewer]);
 
+  /* Choosing another facility starts the same kind of booking again: a doctor visit goes
+     back to the doctor-visit list, a test to the test facility list with the same tests. */
   const rebookElsewhere = useCallback(() => {
     if (!selected) return;
     setSelectedId(selected.id);
+    if (selected.visit) {
+      setVisitState({ facility: null, slot: null, reason: selected.note === 'No reason given.' ? '' : selected.note, id: null });
+      setScreenRaw('bookVisit');
+      return;
+    }
     setBookingState(b => ({ ...b, tests: [...selected.tests], facility: null, slot: null, id: null }));
     setScreenRaw('bookFacility');
   }, [selected]);
@@ -295,13 +371,25 @@ export function useWallet() {
     setScreenRaw('consent');
   }, [revoke, demo, viewer]);
 
+  /* History sharing, per facility: separate from the appointment's consent. */
+  const historyFor = useCallback((facility: string) =>
+    historyGrant(state.historyGrants, state.appointments, WALLET_PATIENT.id, facility, now), [state.historyGrants, state.appointments, now]);
+  const toggleHistory = useCallback((c: ConsentLine) => {
+    if (historyFor(c.facility)) demo.revokeHistory(WALLET_PATIENT.id, c.facility);
+    else demo.grantHistory(WALLET_PATIENT.id, c.facility, 'appointment' in c.revoke ? c.revoke.appointment : null, 'Health wallet');
+  }, [historyFor, demo]);
+
   const summaries = useMemo(() => Object.fromEntries(mine.map(a => [a.id, recordedSummary(a)])), [mine]);
 
+  /* Wait and result timing for one appointment, learned from past timestamps. */
+  const estimate = useCallback((a: Appointment) => estimateFor(a.record, state.appointments, now), [state.appointments, now]);
+
   return {
-    now, opened: state.opened, openResult,
-    screen, setScreen, referrals: shown, active, selected, openAppointment,
-    consents, revoke, startRevoke, confirmRevoke,
+    now, opened: state.opened, openResult, estimate,
+    screen, setScreen, tab, home, referrals: shown, active, selected, openAppointment, openById,
+    consents, revoke, startRevoke, confirmRevoke, historyFor, toggleHistory,
     notes, unreadCount, seenAt, documents,
+    visit, setVisit, startVisit, confirmVisit,
     booking, setBooking, toggleTest, book, confirmBooking, setReferredBy,
     summaries, acceptProposed, rebookElsewhere, rhu: RHU,
   };

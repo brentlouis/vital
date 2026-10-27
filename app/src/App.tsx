@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { useDemo } from './store/context';
 import { LabPortal } from './portals/lab/LabPortal';
 import { RhuPortal } from './portals/rhu/RhuPortal';
 import { WalletApp } from './portals/wallet/WalletApp';
@@ -16,7 +18,7 @@ import { AdminVerification } from './portals/admin/AdminVerification';
 const PORTALS = [
   { path: '/onboarding/facility', label: 'Facility onboarding', note: 'F1–F5',
     step: 'A health centre, clinic or laboratory registers and uploads its licence.' },
-  { path: '/admin', label: 'Admin verification', note: 'Platform admin · A1–A2',
+  { path: '/admin', label: 'Admin', note: 'Verification, pilot measures, audit log, issues · A1–A5',
     step: 'VITAL checks the documents and approves or rejects the facility.' },
   { path: '/staff', label: 'Staff access', note: 'Sign-in and quick switch · S1–S4',
     step: 'Staff accept their invite, sign in, and hand the shared terminal over by PIN.' },
@@ -31,6 +33,8 @@ const PORTALS = [
 ];
 
 function Index() {
+  const demo = useDemo();
+  const [done, setDone] = useState(false);
   return (
     <div className="portal index">
       <h1 className="page-title">VITAL prototype</h1>
@@ -44,6 +48,22 @@ function Index() {
         ))}
       </ol>
       <p className="muted small">The loop closes back in the RHU portal, where the referring provider acknowledges the result.</p>
+
+      <h2 className="index__h2">Other views</h2>
+      <ul className="index__list index__list--plain">
+        <li>
+          <Link to={`/lab?facility=${encodeURIComponent('Tagbilaran Diagnostic Center')}`}>Laboratory portal as a clinic that refers and receives</Link>
+          <span className="index__step">The same portal for a facility that also sends referrals: one queue with Incoming and Outgoing, and its own New appointment.</span>
+        </li>
+      </ul>
+
+      <h2 className="index__h2">Demo data</h2>
+      <p className="index__step">Every surface shares one set of records, saved in this browser. Reset to start the walkthrough from the beginning.</p>
+      <div className="index__actions">
+        <button type="button" className="btn btn--outline btn--md" onClick={() => { demo.reset(); setDone(true); }}>Reset demo data</button>
+        {done && <span className="muted" role="status">Demo data reset.</span>}
+      </div>
+      <p className="muted small">The screen switcher and demo clock are hidden so each surface looks finished. Add <code>?demo</code> to any address to show them for this tab, or <code>?demo=off</code> to hide them again.</p>
     </div>
   );
 }

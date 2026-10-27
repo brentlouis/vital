@@ -1,8 +1,9 @@
-import { PROFILE, WALLET_PATIENT, givenFirst } from '../../domain/reference';
+import { plainTests } from '../../domain/reference';
 import type { Appointment } from '../../domain/view';
-import { ago, fmt } from '../../domain/time';
+import { ago, dayIndex, fmt, fmtDay, fmtTime } from '../../domain/time';
+import type { Estimate } from '../../domain/estimate';
 import { MBack, MBadge, MButton, MHead, Ms } from '../../components/Phone';
-import { noteSkin, plain, skin, type BookingSummary, type Wallet } from './useWallet';
+import { TAB_LABEL, noteSkin, plain, skin, type BookingSummary, type Wallet } from './useWallet';
 
 /* ---------- Shared pieces ---------- */
 
@@ -33,104 +34,90 @@ function StatusPill({ r }: { r: Appointment }) {
   return <MBadge glyph={p.glyph} tone={skin(r.status).tone}>{p.badge}</MBadge>;
 }
 
-/* ---------- P1 Home ---------- */
-
-export function Home({ w }: { w: Wallet }) {
-  const activeCount = w.consents.filter(c => c.active).length;
-  const word = ['No', 'One', 'Two', 'Three', 'Four', 'Five'][activeCount] || String(activeCount);
-  const accessLine = activeCount === 0
-    ? 'No facility can see your record right now. A new appointment will ask you to share again.'
-    : `${word} ${activeCount === 1 ? 'facility' : 'facilities'} can see parts of your record right now. You can stop sharing at any time.`;
-
-  return (
-    <div className="screen">
-      <div className="mhead mhead--tight">
-        <h1 className="mtitle">Your health wallet</h1>
-        <p className="mlead mlead--muted">{givenFirst(WALLET_PATIENT.name)} · {WALLET_PATIENT.id}</p>
-      </div>
-
-      <div className="mpanel">
-        <span className="mserif20">You decide who can see your record</span>
-        <span>{accessLine}</span>
-        <MButton variant="outline" className="mbtn--start mt8" onClick={() => w.setScreen('consent')}>Review who has access</MButton>
-      </div>
-
-      <MButton tall onClick={() => w.setScreen('bookTests')}><Ms glyph="event_available" />Book an appointment</MButton>
-
-      <div className="mstack">
-        <h2 className="mh2">Appointments in progress</h2>
-        {w.active.map(r => (
-          <button key={r.id} type="button" className="mcard" onClick={() => w.openAppointment(r)}>
-            <StatusPill r={r} />
-            <span className="strong">{r.test}</span>
-            <span className="muted">{plain(r.status, r.lab, false, r).line}</span>
-            {r.status === 'Reschedule proposed' && (
-              <span className="countdown tabular"><Ms glyph="hourglass_top" size={20} />{r.respondCountdown}</span>
-            )}
-            <span className="mfine tabular">{r.updated}</span>
-          </button>
-        ))}
-        {w.active.length === 0 && (
-          <p className="mlead mlead--muted">Nothing in progress. Book an appointment when you need a test.</p>
-        )}
-      </div>
-
-      <div className="mstack">
-        <h2 className="mh2">Recent results</h2>
-        <div className="mstack mstack--0">
-          {w.documents.filter(d => !d.voided).slice(0, 2).map((d, i) => (
-            <div key={i} className="mrow">
-              <Ms glyph="description" className="forest" />
-              <div className="mrow__text">
-                <span className="strong">{d.name}</span>
-                <span className="muted">{d.facility}</span>
-                <span className="mfine tabular">{d.date}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-        <MButton variant="outline" className="mbtn--start" onClick={() => w.setScreen('docs')}>See all documents</MButton>
-      </div>
-    </div>
-  );
-}
-
 /* ---------- P2 Detail ---------- */
 
+/* One appointment: where it stands, when and where, the one thing to do, then the history
+   for anyone who wants it. */
 export function Detail({ w, sel }: { w: Wallet; sel: Appointment }) {
   const p = plain(sel.status, sel.lab, false, sel);
   const summary = w.summaries[sel.id];
-  const trail = [...sel.trail].reverse();
+  /* Tests the doctor ordered at this visit, and the visit a test was ordered from. */
+  const ordered = sel.visit ? w.referrals.filter(r => r.fromVisit === sel.id) : [];
+  const fromVisit = sel.fromVisit ? w.referrals.find(r => r.id === sel.fromVisit) : undefined;
+  /* The patient sees the steps that stand; a step staff took back by mistake is left out. */
+  const trail = sel.trail.filter(e => !e.withdrawn && !e.withdrawal).reverse();
+  const nothingToDo = ['Sent', 'Received', 'Booked'].includes(sel.status);
   return (
     <div className="screen">
-      <MBack onClick={() => w.setScreen('home')}>Wallet home</MBack>
+      <MBack onClick={() => w.setScreen(w.tab)}>{TAB_LABEL[w.tab] ?? 'Home'}</MBack>
       <div className="mhead">
-        <h1 className="mtitle">{sel.test}</h1>
         <StatusPill r={sel} />
-        <p className="mlead">{p.line}</p>
+        <h1 className="mtitle">{plainTests(sel.record.tests)}</h1>
+        <p className="mlead">{p.line}{nothingToDo ? ` You do not need to do anything. ${sel.lab} will tell you when to come in.` : ''}</p>
       </div>
 
-      <div className="mpanel mpanel--4">
-        <span className="strong">{sel.lab}</span>
-        <span className="muted">{sel.origin === 'Personal' ? 'You booked this yourself' : `Asked for by ${sel.fromFacility || w.rhu}`}</span>
-        <span className="tabular">Your time: {sel.scheduledAt}</span>
-      </div>
+      <dl className="mfacts">
+        <div><dt>When</dt><dd className="tabular">{sel.scheduledAt}</dd></div>
+        <div><dt>Where</dt><dd>{sel.lab}</dd></div>
+        <div><dt>{sel.visit ? 'Booked by' : 'Asked for by'}</dt><dd>{sel.origin === 'Personal' ? 'You booked this yourself' : sel.fromFacility || w.rhu}</dd></div>
+        {sel.visit && sel.note && <div><dt>You said</dt><dd>{sel.note}</dd></div>}
+      </dl>
+
+      {sel.priority && <p className="mpriority"><Ms glyph="priority_high" size={18} />Priority · {sel.priority}. You will be seen first.</p>}
+
+      {(() => { const e = w.estimate(sel); return e ? <EstimatePanel e={e} now={w.now} /> : null; })()}
+
+      {fromVisit && (
+        <button type="button" className="mstart" onClick={() => w.openAppointment(fromVisit)}>
+          <span className="mfile"><Ms glyph="stethoscope" /></span>
+          <span className="mentry__text">
+            <span className="mentry__title">Ordered at your doctor visit</span>
+            <span className="mentry__line">{fromVisit.lab}</span>
+            <span className="mentry__line mentry__line--muted tabular">{fromVisit.scheduledAt}</span>
+          </span>
+          <Ms glyph="chevron_right" className="mentry__chev" />
+        </button>
+      )}
+
+      {sel.visit && ['Completed', 'Patient arrived'].includes(sel.status) && (
+        <section className="msection">
+          <h2 className="mh2">Tests from this visit</h2>
+          {ordered.length ? (
+            <div className="mentries mentries--card">
+              {ordered.map(r => (
+                <button key={r.id} type="button" className="mentry" onClick={() => w.openAppointment(r)}>
+                  <span className="mfile"><Ms glyph="biotech" /></span>
+                  <span className="mentry__text">
+                    <span className="mentry__title">{plainTests(r.record.tests)}</span>
+                    <span className="mentry__line" title={r.lab}>{r.lab}</span>
+                    <span className="mentry__line mentry__line--muted tabular">{r.scheduledAt}</span>
+                    <StatusPill r={r} />
+                  </span>
+                  <Ms glyph="chevron_right" className="mentry__chev" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="mempty">{sel.status === 'Completed' ? 'The doctor did not order any tests.' : 'Any tests the doctor orders appear here.'}</p>
+          )}
+        </section>
+      )}
 
       {sel.status === 'Reschedule proposed' && (
         <div className="mnotice mnotice--amber">
           <span className="strong amber">{sel.lab} proposed a new time</span>
           <span className="tabular">{sel.proposedSlot}</span>
-          <span className="tabular muted">{sel.respondCountdown}</span>
-          <MButton variant="outline" className="mbtn--start" onClick={() => w.setScreen('proposed')}>See the proposed time</MButton>
+          <span className="muted">{sel.respondCountdown}</span>
+          <MButton className="mbtn--start" onClick={() => w.setScreen('proposed')}>See the new time</MButton>
         </div>
       )}
 
-      {summary && <div className="mpanel mpanel--12"><SummaryBlock summary={summary} /></div>}
-
       {sel.result && ['Endorsed', 'Completed'].includes(sel.status) && <ResultPanel w={w} sel={sel} />}
 
-      <div className="mstack mstack--16">
-        <h2 className="mh2">What has happened</h2>
+      {summary && <div className="mpanel mpanel--12"><SummaryBlock summary={summary} /></div>}
+
+      <details className="mhistory">
+        <summary className="mhistory__summary">What has happened <span className="muted">({trail.length})</span></summary>
         <ol className="mtrail">
           {trail.map((e, i) => {
             const q = plain(e.status, sel.lab, true, sel);
@@ -145,11 +132,33 @@ export function Detail({ w, sel }: { w: Wallet; sel: Appointment }) {
             );
           })}
         </ol>
-      </div>
+      </details>
+    </div>
+  );
+}
 
-      {['Sent', 'Received'].includes(sel.status) && (
-        <div className="mpanel">You do not need to do anything. {sel.lab} will tell you when to come in.</div>
+/* How long the patient will likely wait, and when results will be ready: a range, with what it
+   rests on. A wait shows only at facilities busy enough to queue. */
+function EstimatePanel({ e, now }: { e: Estimate; now: number }) {
+  const r = e.result;
+  const when = r && (dayIndex(r.from) === dayIndex(now) && !r.overnight
+    ? `today, ${fmtTime(r.from)}–${fmtTime(r.to)}`
+    : `${fmtDay(r.from)}, ${fmtTime(r.from)}–${dayIndex(r.to) === dayIndex(r.from) ? fmtTime(r.to) : `${fmtDay(r.to)} ${fmtTime(r.to)}`}`);
+  return (
+    <div className="mestimate">
+      {e.wait && (
+        <div className="mestimate__row">
+          <Ms glyph="schedule" size={20} className="forest" />
+          <span><span className="strong">About {e.wait.minutes} min wait</span> <span className="muted">· {e.wait.ahead} ahead of you</span></span>
+        </div>
       )}
+      {r && (
+        <div className="mestimate__row">
+          <Ms glyph="lab_research" size={20} className="forest" />
+          <span><span className="strong">Results expected {when}</span><span className="muted"> · we'll notify you</span></span>
+        </div>
+      )}
+      <span className="mfine">{e.basis}</span>
     </div>
   );
 }
@@ -164,76 +173,30 @@ function ResultPanel({ w, sel }: { w: Wallet; sel: Appointment }) {
       <div className="mrow mrow--flat">
         <Ms glyph="description" className="forest" />
         <div className="mrow__text">
-          <span className="strong">{sel.test} result</span>
+          <span className="strong">{plainTests(sel.record.tests)} result</span>
           <span className="muted">{sel.lab}</span>
-          <span className="mfine tabular">Released {sel.result!.released}</span>
+          <span className="mfine">Released <span className="tabular">{sel.result!.released}</span></span>
         </div>
       </div>
       <MButton onClick={() => w.openResult(sel)}><Ms glyph="open_in_new" />Open result</MButton>
-      {openedAt !== undefined && <span className="mfine tabular">You opened this result on {fmt(openedAt)}.</span>}
-      <span className="mfine">
-        {personal
-          ? sel.status === 'Endorsed'
-            ? 'You booked this yourself, so opening the result finishes the appointment. Ask a doctor what it means for you.'
-            : 'Ask a doctor what this result means for you.'
-          : sel.status === 'Endorsed'
-            ? `${closer} ordered this test and will read the result. You do not need to do anything.`
-            : 'Ask the provider who ordered it what this result means for you.'}
-      </span>
-    </div>
-  );
-}
-
-/* ---------- P3 Documents ---------- */
-
-export function Documents({ w }: { w: Wallet }) {
-  return (
-    <div className="screen">
-      <h1 className="mtitle">Documents</h1>
-      <p className="mlead mlead--muted">Results and prescriptions, newest first. VITAL does not explain what a result means — ask the provider who ordered it.</p>
-      <div className="mstack mstack--0">
-        {w.documents.map((d, i) => (
-          <div key={i} className="mrow">
-            <Ms glyph={d.voided ? 'report' : 'description'} className={d.voided ? 'clay' : ''} />
-            <div className="mrow__text mrow__text--2">
-              <span className={d.voided ? 'strong clay' : 'strong'}>{d.name}</span>
-              <span className="muted">{d.facility}</span>
-              <span className="mfine tabular">{d.date}</span>
-              {d.voided && (
-                <span className="clay">This document was withdrawn by the laboratory because it was attached to the wrong person. It is kept in your record so the correction is visible.</span>
-              )}
-            </div>
-          </div>
-        ))}
+      {openedAt !== undefined && <span className="mfine">You opened this result on <span className="tabular">{fmt(openedAt)}</span>.</span>}
+      <div className="mpanel mpanel--4">
+        <span className="strong">What happens next</span>
+        <span>
+          {personal
+            ? sel.status === 'Endorsed'
+              ? 'You booked this yourself, so opening the result finishes the appointment. Show it to a doctor or your health centre, who can tell you what it means.'
+              : 'Show this result to a doctor or your health centre. They can tell you what it means for you.'
+            : sel.status === 'Endorsed'
+              ? `${closer} ordered this test and will read the result. They will contact you if you need to come back. You do not need to do anything now.`
+              : `${closer} has read this result. If you have questions about it, ask them on your next visit or call them.`}
+        </span>
       </div>
     </div>
   );
 }
 
-/* ---------- P4 Consent / P5 Revoke ---------- */
-
-export function ConsentList({ w }: { w: Wallet }) {
-  return (
-    <div className="screen">
-      <MHead title="Who can see your record">
-        <p className="mlead">You decide who can see your record. Stopping a facility does not delete anything they have already read.</p>
-      </MHead>
-      <div className="mstack mstack--16">
-        {w.consents.map(c => (
-          <div key={c.key} className="mcard">
-            <MBadge glyph={c.active ? 'shield' : 'shield_moon'} tone={c.active ? 'progress' : 'waiting'}>{c.active ? 'Sharing' : 'Ended'}</MBadge>
-            <span className="strong">{c.facility}</span>
-            <span>{c.scope}</span>
-            <span className="mfine tabular">Granted {c.granted} · {c.until}</span>
-            {c.active && (
-              <MButton variant="danger-outline" className="mbtn--start mt8" onClick={() => w.startRevoke(c.key)}>Stop sharing</MButton>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+/* ---------- P5 Revoke ---------- */
 
 export function Revoke({ w }: { w: Wallet }) {
   const rv = w.revoke;
@@ -261,31 +224,6 @@ export function Revoke({ w }: { w: Wallet }) {
           <p className="mlead">You already stopped sharing with {rv.facility}.</p>
         )}
       </div>
-    </div>
-  );
-}
-
-/* ---------- P9 Profile ---------- */
-
-export function Profile() {
-  return (
-    <div className="screen">
-      <MHead title="Your details">
-        <p className="mlead">You entered these yourself. A facility sees them only while you are sharing your record with them.</p>
-      </MHead>
-      <div className="mstack mstack--0">
-        {PROFILE.map(p => (
-          <div key={p.label} className="mrow">
-            <div className="mrow__text mrow__text--2">
-              <span className="mfield-label">{p.label}</span>
-              <span className="strong">{p.value}</span>
-              <span className="mchip tabular mt4"><Ms glyph="edit_note" size={14} />You entered this · {p.updated}</span>
-            </div>
-            <MButton variant="quiet" className="mbtn--change">Change</MButton>
-          </div>
-        ))}
-      </div>
-      <div className="mpanel">VITAL does not read these details or decide anything from them. They are here because a facility often asks for them on paper.</div>
     </div>
   );
 }
@@ -328,7 +266,7 @@ export function Proposed({ w, sel }: { w: Wallet; sel: Appointment }) {
   const open = sel.status === 'Reschedule proposed';
   return (
     <div className="screen">
-      <MBack onClick={() => w.setScreen('home')}>Wallet home</MBack>
+      <MBack onClick={() => w.setScreen(w.tab)}>{TAB_LABEL[w.tab] ?? 'Home'}</MBack>
       <div className="mhead">
         <h1 className="mtitle">A new time has been proposed</h1>
         <MBadge glyph="event_repeat" tone="attention">New time proposed</MBadge>
@@ -346,7 +284,7 @@ export function Proposed({ w, sel }: { w: Wallet; sel: Appointment }) {
               <span className="mfield-label">Proposed time</span>
               <span className="proposed tabular">{sel.proposedSlot}</span>
             </div>
-            <span className="tabular muted">{sel.respondCountdown}</span>
+            <span className="muted">{sel.respondCountdown}</span>
             <span>If you do not answer in time, the appointment goes back to the facility as declined, with the reason "No response to proposed time."</span>
           </div>
 

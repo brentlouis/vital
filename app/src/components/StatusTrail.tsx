@@ -1,19 +1,22 @@
 import type { ReactNode } from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, Undo2 } from 'lucide-react';
 import { Card, Icon } from './ui';
 import type { TrailEventView } from '../domain/view';
 import { STATUS_META, trailHue } from '../domain/status';
 
-/* The append-only status trail. Every entry names the person and facility that wrote it. */
+/* The append-only status trail. Every entry names the person and facility that wrote it. A
+   step taken back by mistake stays, struck through, followed by the entry that withdrew it. */
 export function StatusTrail({ trail, footnote }: { trail: TrailEventView[]; footnote?: ReactNode }) {
   return (
     <Card title="Status trail">
       <ol className="trail">
         {trail.map((e, i) => (
-          <li key={i} className={`trail__item hue--${trailHue(e.status)}`}>
-            <span className="trail__icon"><Icon icon={STATUS_META[e.status].icon} size={16} /></span>
+          <li key={i} className={e.withdrawal || e.withdrawn ? 'trail__item trail__item--withdrawn' : `trail__item hue--${trailHue(e.status)}`}>
+            <span className="trail__icon"><Icon icon={e.withdrawal ? Undo2 : STATUS_META[e.status].icon} size={16} /></span>
             <div className="trail__text">
-              <span className="trail__status">{e.status}</span>
+              {e.withdrawal
+                ? <span className="trail__status">Withdrew “{e.status}” — taken by mistake</span>
+                : <span className="trail__status">{e.withdrawn ? <><s>{e.status}</s> <span className="trail__tag">Withdrawn</span></> : e.status}</span>}
               <span className="trail__meta">{e.actor} · {e.facility}</span>
               <span className="trail__meta tabular">{e.at}</span>
             </div>
@@ -25,7 +28,8 @@ export function StatusTrail({ trail, footnote }: { trail: TrailEventView[]; foot
   );
 }
 
-/* A released result document, as a tinted row with an open link. */
+/* A released result document, as a tinted row. The prototype has no document viewer, so
+   it names the file rather than offering a link that would do nothing. */
 export function ResultTile({ file, meta }: { file: string; meta: string }) {
   return (
     <div className="tile">
@@ -34,7 +38,6 @@ export function ResultTile({ file, meta }: { file: string; meta: string }) {
         <span className="tile__name">{file}</span>
         <span className="tile__meta">{meta}</span>
       </div>
-      <a href="#" className="tile__end small" onClick={e => e.preventDefault()}>Open result</a>
     </div>
   );
 }

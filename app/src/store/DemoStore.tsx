@@ -10,7 +10,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, t
 import { canTake } from '../domain/flow';
 import { defaultStaff, findStaff } from '../domain/reference';
 import type { AppointmentRecord, EventStatus, Viewer } from '../domain/types';
-import { KEY, VERSION, load, prepareCreate, prepareTake, reducer, seedState, type DemoState, type TakeOptions } from './state';
+import { KEY, VERSION, load, prepareCreate, prepareTake, prepareUndo, reducer, seedState, undoableStep, type DemoState, type TakeOptions } from './state';
 import { Ctx, type DemoApi } from './context';
 
 export function DemoProvider({ children }: { children: ReactNode }) {
@@ -48,8 +48,15 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     return null;
   }, []);
 
-  const create = useCallback((draft: Omit<AppointmentRecord, 'id' | 'trail' | 'results'>, viewer: Viewer) => {
-    const action = prepareCreate(stateRef.current, draft, viewer);
+  const undo = useCallback((id: string, viewer: Viewer, status: EventStatus) => {
+    const action = prepareUndo(stateRef.current, id, viewer, status);
+    if (typeof action === 'string') return action;
+    dispatch(action);
+    return null;
+  }, []);
+
+  const create = useCallback((draft: Omit<AppointmentRecord, 'id' | 'trail' | 'results'>, viewer: Viewer, note?: string) => {
+    const action = prepareCreate(stateRef.current, draft, viewer, note);
     if (typeof action === 'string') return action;
     dispatch(action);
     return action.type === 'create' ? action.record : 'Not created.';
@@ -65,6 +72,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     state,
     now: state.now,
     take,
+    undo,
+    undoable: (id, viewer) => undoableStep(state, id, viewer),
     create,
     tick: minutes => dispatch({ type: 'tick', minutes }),
     revokeGrant: (patientId, facility) => dispatch({ type: 'revokeGrant', patientId, facility }),
@@ -84,6 +93,18 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       if (viewer.kind !== 'staff') return;
       dispatch({ type: 'audit', entry: { at: stateRef.current.now, actor: viewer.name, facility: viewer.facility, patientId, action: 'Access denied' } });
     },
+    recordHistoryView: (viewer, patientId) => {
+      if (viewer.kind !== 'staff') return;
+      const s = stateRef.current;
+      /* One entry per person, patient and minute: re-renders do not multiply it. */
+      if (s.audit.some(e => e.action === 'History viewed' && e.at === s.now && e.actor === viewer.name && e.patientId === patientId)) return;
+      dispatch({ type: 'audit', entry: { at: s.now, actor: viewer.name, facility: viewer.facility, patientId, action: 'History viewed' } });
+    },
+    grantHistory: (patientId, facility, appointmentId, by) =>
+      dispatch({ type: 'grantHistory', grant: { patientId, facility, appointmentId, by, granted: 0 } }),
+    revokeHistory: (patientId, facility) => dispatch({ type: 'revokeHistory', patientId, facility }),
+    reportIssue: issue => dispatch({ type: 'reportIssue', issue }),
+    resolveIssue: (id, resolution) => dispatch({ type: 'resolveIssue', id, resolution }),
     submitRegistration: registration => dispatch({ type: 'submitRegistration', registration }),
     decideRegistration: (reference, status, reason) => dispatch({ type: 'decideRegistration', reference, status, reason }),
     reset: () => {
@@ -91,7 +112,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'reset' });
     },
     staffViewer,
-  }), [state, take, create, staffViewer]);
+  }), [state, take, undo, create, staffViewer]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

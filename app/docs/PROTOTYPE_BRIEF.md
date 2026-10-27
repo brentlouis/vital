@@ -9,9 +9,16 @@
 > This is the current brief. The copies in `../vital/project/uploads/` are the
 > Claude Design export and are no longer updated.
 
-**Status:** v0.3.3. Supersedes v0.2. Adds §10 — access, onboarding and system
+**Status:** v0.3.4. Supersedes v0.2. Adds §10 — access, onboarding and system
 flow: how facilities, staff and patients get accounts, and how the three surfaces
 resolve to one API. Patient identity matching is now decided, not open.
+
+v0.3.4 hardens referral creation (§10.5): the form starts empty, the patient is found by
+search and confirmed, the clinical note is required, and the RHU records the patient's
+agreement at the counter before Sent is written. One-tap steps can be undone for 15
+minutes by a further entry that withdraws them; nothing is removed from the trail
+(§10.5). Every step is taken on the appointment, after reading the request — queue
+rows carry no buttons.
 
 v0.3.3 completes the events table with the steps the prototype already used —
 Reschedule proposed, the patient accepting a new time, declining an unanswered
@@ -589,8 +596,9 @@ One API. Every surface is a view of the same objects.
 ```
 RHU staff creates referred appointment (R2)
   → Appointment{ patient, from_facility, to_facility, tests, scheduled_at }
-  → ConsentGrant auto-created: patient → to_facility, scoped to this appointment
-  → AppointmentStatusEvent: Sent, actor = RHU user
+  → the patient agrees at the counter; RHU user ticks it (R2 cannot send without it)
+  → ConsentGrant created: patient → to_facility, scoped to this appointment
+  → AppointmentStatusEvent: Sent, actor = RHU user, note = how consent was recorded
         ↓ routed by to_facility
 Laboratory queue (L1) shows it
   → Received, Accepted → events, actor = lab user
@@ -604,6 +612,26 @@ Not visible to: anyone else, ever
 **Every read is checked against an active ConsentGrant, never against facility
 identity.** A denied read returns denied and writes an AuditLogEntry — not empty,
 not a crash.
+
+**Undo is narrow.** A one-tap step (Received, Accepted, Patient arrived,
+Completed) can be taken back with an Undo button on the appointment, where the
+step was taken, for up to 15 minutes, and only while it is still the latest entry
+and was written by the same person. **Undo appends; it never removes.** It writes
+a further entry, by the same person, that withdraws the step. Both entries stay in
+the trail — the step struck through and marked withdrawn, then "Withdrew … — taken
+by mistake" — and the status is worked out as if the step had not been taken. A
+withdrawal cannot itself be undone; the step is simply taken again. Whoever was
+told about the step is told it was withdrawn (only Accepted reaches anyone: the
+patient and the ordering facility). The patient's wallet shows only the steps that
+stand. Steps that confirm first, move a slot or attach a document (Declined,
+No-show, Endorsed, Result voided, Reschedule proposed) are never undone: they are
+corrected with a further step.
+
+Undo is a quiet footer under the status buttons, not one of them: a hairline, then
+"You accepted this at 09:43 · Undo available for 15 minutes" with a small Undo
+button on the right. Queue rows
+carry no step buttons: choosing a row shows the appointment, where the request is
+read before any step is taken.
 
 A personal appointment is identical from `Received` onward. The patient creates
 the ConsentGrant at booking instead of the RHU creating it at referral.

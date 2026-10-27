@@ -15,12 +15,18 @@ export function NotificationBell({ notices, seenAt, now, onOpen, onSeen }: {
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLButtonElement>(null);
   const unread = notices.filter(n => n.at > seenAt).length;
 
   useEffect(() => {
     if (!open) return;
+    ref.current?.querySelector<HTMLElement>('.bellbox__item')?.focus();
     const close = (e: MouseEvent | KeyboardEvent) => {
-      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !ref.current?.contains(e.target as Node)) setOpen(false);
+      if (e instanceof KeyboardEvent) {
+        if (e.key === 'Escape') { setOpen(false); bellRef.current?.focus(); }
+        return;
+      }
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
     window.addEventListener('mousedown', close);
     window.addEventListener('keydown', close);
@@ -29,7 +35,7 @@ export function NotificationBell({ notices, seenAt, now, onOpen, onSeen }: {
 
   return (
     <div className="bellbox" ref={ref}>
-      <button type="button" className="btn btn--outline btn--sm" aria-expanded={open}
+      <button ref={bellRef} type="button" className="btn btn--outline btn--md" aria-expanded={open}
         aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
         onClick={() => { if (!open) onSeen(); setOpen(o => !o); }}>
         <Icon icon={Bell} size={16} />

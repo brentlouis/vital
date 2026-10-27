@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { Repeat, UserRound } from 'lucide-react';
 import { Icon } from './ui';
 import { DemoClock } from './DemoClock';
+import { skipToMain } from './useScreenFocus';
+import { Logo } from './Logo';
+import { demoControlsOn } from './demoMode';
 
 /* The session bar is the only fixed portal element. Shared terminals: the signed-in
    person is always named, and switching user is always one click away. */
@@ -20,7 +23,7 @@ export function SessionBar({ name, line, facility, bell, switchable = true, shar
   const to = `/staff?screen=s4${facility ? `&facility=${encodeURIComponent(facility)}` : ''}`;
   return (
     <header className="session">
-      <span className="session__brand">VITAL</span>
+      <span className="session__brand"><Logo height={22} /></span>
       <span className="session__user-icon"><Icon icon={UserRound} size={16} /></span>
       <div className="session__who">
         <span className="session__name">{name}</span>
@@ -39,11 +42,13 @@ export function SessionBar({ name, line, facility, bell, switchable = true, shar
   );
 }
 
-/* Prototype-only strip for jumping between screens and configurations. Not product UI. It
-   always carries the demo clock. */
+/* Prototype-only strip for jumping between screens and configurations. Not product UI, so
+   it is hidden unless the URL asks for it (?demo). It always carries the demo clock. */
 export function PrototypeBar({ children }: { children: ReactNode }) {
+  if (!demoControlsOn()) return null;
   return (
     <div className="protobar">
+      <a className="skip-link" href="#main" onClick={skipToMain}>Skip to the app</a>
       {children}
       <DemoClock />
     </div>

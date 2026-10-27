@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { STEPS, allowedSteps, canTake, checkTrail, shownStatus, OVERDUE_GRACE, RESPOND_WINDOW } from './flow';
+import { STEPS, allowedSteps, canTake, checkTrail, isVisit, shownStatus, OVERDUE_GRACE, RESPOND_WINDOW } from './flow';
 import { SEED_APPOINTMENTS, SEED_GRANTS, roleForEvent, actorFor } from './seed';
-import { RHU, facility, defaultStaff, WALLET_PATIENT, PEOPLE } from './reference';
+import { RHU, facility, defaultStaff, WALLET_PATIENT, PEOPLE, VISIT_FACILITIES } from './reference';
 import { accessTo } from './access';
 import { noticesFor } from './notify';
 import type { AppointmentRecord, Viewer } from './types';
@@ -29,11 +29,26 @@ describe('seed data follows the brief', () => {
     });
   });
 
-  it.each(SEED_APPOINTMENTS.map(a => [a.id, a] as const))('%s only asks for tests the laboratory offers', (_id, a) => {
+  /* Doctor visits ask for no test, and are booked with a facility that has doctors. */
+  it.each(SEED_APPOINTMENTS.filter(a => !isVisit(a)).map(a => [a.id, a] as const))('%s only asks for tests the laboratory offers', (_id, a) => {
     const f = facility(a.lab)!;
     expect(a.tests.filter(t => !f.coverage.includes(t))).toEqual([]);
     /* A patient cannot book a test the laboratory only accepts on referral. */
     if (a.origin === 'Personal') expect(a.tests.filter(t => f.referralTests.includes(t))).toEqual([]);
+  });
+
+  it('books doctor visits only with facilities that have doctors, and never with a result', () => {
+    const visits = SEED_APPOINTMENTS.filter(isVisit);
+    expect(visits.length).toBeGreaterThan(0);
+    visits.forEach(v => {
+      expect(VISIT_FACILITIES.map(f => f.name)).toContain(v.lab);
+      expect(v.results).toEqual([]);
+    });
+    /* Tests ordered from a visit point at a visit of the same patient. */
+    SEED_APPOINTMENTS.filter(a => a.fromVisit).forEach(a => {
+      const v = SEED_APPOINTMENTS.find(x => x.id === a.fromVisit)!;
+      expect(isVisit(v) && v.patientId === a.patientId).toBe(true);
+    });
   });
 
   it('never refers a facility to itself', () => {

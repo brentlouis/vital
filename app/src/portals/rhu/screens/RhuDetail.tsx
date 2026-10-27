@@ -1,21 +1,30 @@
+import { useState } from 'react';
+import type { Minute } from '../../../domain/time';
+import { DateTimeField } from '../../../components/DateTimeField';
 import { CircleX, Clock, Hourglass, OctagonAlert, ShieldOff, UserX } from 'lucide-react';
 import { BackButton, Button, Callout, Card, Facts, Icon, StatusBadge } from '../../../components/ui';
 import { ResultTile, StatusTrail } from '../../../components/StatusTrail';
 import { resultMeta } from '../../../domain/status';
 import { providerOf, type Appointment } from '../../../domain/view';
 import type { Rhu } from '../useRhu';
+import { UndoRow } from '../../../components/UndoRow';
+import { VisitOrders } from '../../../components/VisitOrders';
+import { PatientHistory } from '../../../components/PatientHistory';
 
 /* R3–R6 — appointment detail from the referring side. The flow table gives the health
    centre one step of its own: acknowledging a released result. Everything else is the
    laboratory's or the patient's. */
-export function RhuDetail({ rhu, sel }: { rhu: Rhu; sel: Appointment }) {
+export function RhuDetail({ rhu, sel, embedded }: { rhu: Rhu; sel: Appointment; embedded?: boolean }) {
+  if (sel.visit) return <VisitDetail rhu={rhu} sel={sel} embedded={embedded} />;
+  const H = embedded ? 'h2' : 'h1';
+  const undo = rhu.undoFor(sel);
   const awaiting = ['Sent', 'Received', 'Accepted', 'Overdue', 'Reschedule proposed', 'Patient arrived'].includes(sel.status);
 
   return (
-    <div className="detail">
-      <BackButton onClick={() => rhu.setScreen('queue')}>Appointment queue</BackButton>
+    <div className={embedded ? 'detail detail--embedded' : 'detail'}>
+      {!embedded && <BackButton onClick={() => rhu.setScreen('queue')}>Appointment queue</BackButton>}
       <div className="detail__head">
-        <h1 className="page-title">{sel.patient}</h1>
+        <H className="page-title" data-focus-target="">{sel.patient}</H>
         <StatusBadge status={sel.status} />
         <span className="muted tabular">{sel.id}</span>
       </div>
@@ -68,7 +77,7 @@ export function RhuDetail({ rhu, sel }: { rhu: Rhu; sel: Appointment }) {
 
       <div className="detail__grid">
         <div className="stack">
-          <Card title="Appointment">
+          <Card title="Appointment" className="card--request">
             <Facts rows={[
               ['Receiving facility', sel.lab],
               ['Test requested', sel.test],
@@ -90,6 +99,9 @@ export function RhuDetail({ rhu, sel }: { rhu: Rhu; sel: Appointment }) {
                   <span className="muted small">Acknowledging records that this health centre has read the result. The appointment then closes as completed.</span>
                 </div>
               ))}
+              {undo && (
+            <UndoRow status={undo.status} at={undo.at} onUndo={() => rhu.takeBack(sel)} />
+          )}
             </Card>
           )}
 
@@ -109,3 +121,81 @@ export function RhuDetail({ rhu, sel }: { rhu: Rhu; sel: Appointment }) {
     </div>
   );
 }
+
+/* A doctor visit a patient booked with this health centre. The health centre is the one
+   receiving it: it confirms the time, records the arrival and that the doctor saw the
+   patient, and orders any tests from the visit. */
+function VisitDetail({ rhu, sel, embedded }: { rhu: Rhu; sel: Appointment; embedded?: boolean }) {
+  const H = embedded ? 'h2' : 'h1';
+  const undo = rhu.undoFor(sel);
+  const actions = rhu.actionsFor(sel);
+  return (
+    <div className={embedded ? 'detail detail--embedded' : 'detail'}>
+      {!embedded && <BackButton onClick={() => rhu.setScreen('queue')}>Appointment queue</BackButton>}
+      <div className="detail__head">
+        <H className="page-title" data-focus-target="">{sel.patient}</H>
+        <StatusBadge status={sel.status} />
+        <span className="muted tabular">{sel.id}</span>
+      </div>
+      <p className="page-sub">Doctor visit · {sel.age} · {sel.sex} · {sel.municipality} · patient ID {sel.patientId}</p>
+
+      {rhu.error && (
+        <Callout tone="clay" icon={OctagonAlert} title="That update was not recorded" className="callout--tight">
+          <p>{rhu.error}</p>
+        </Callout>
+      )}
+      {sel.status === 'Overdue' && (
+        <Callout tone="amber" icon={Clock} title={`Expected at ${sel.scheduledAt}. The patient has not arrived.`}>
+          <p>If the patient is here, mark them arrived. If they are not coming, record that they did not arrive.</p>
+        </Callout>
+      )}
+
+      <div className="detail__grid">
+        <div className="stack">
+          <Card title="Visit" className="card--request">
+            <Facts rows={[
+              ['Booked by', 'The patient, from the health wallet'],
+              ['Scheduled', sel.scheduledAt, true],
+              ['Reason given', sel.note],
+              ['Booked', sel.created, true],
+            ]} />
+          </Card>
+          <PatientHistory sel={sel} viewer={rhu.viewer} />
+          <VisitOrders visit={sel} ordered={rhu.orderedFrom(sel)} canOrder={!rhu.viewer.readOnly}
+            onOrder={() => rhu.orderFromVisit(sel)} onOpen={rhu.openDetail} />
+          {(actions.length > 0 || undo) && (
+            <section className="card actions">
+              <h2 className="card__title actions__title">Update status</h2>
+              {rhu.proposeFor === sel.id && <ProposeTime rhu={rhu} sel={sel} />}
+              {actions.map(a => (
+                <Button key={a.to} variant={a.ui.variant} size="lg" block icon={a.ui.icon} onClick={() => rhu.run(sel, a)}>{a.ui.label}</Button>
+              ))}
+              {actions.length > 0 && <span className="actions__hint">{rhu.viewer.name} and this health centre are written to the status trail with every update.</span>}
+              {undo && <UndoRow status={undo.status} at={undo.at} visit onUndo={() => rhu.takeBack(sel)} />}
+            </section>
+          )}
+        </div>
+        <div className="stack">
+          <StatusTrail trail={sel.trail} footnote="Every entry names the person who wrote it. Entries cannot be edited or removed." />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Proposing a new time for a visit: the health centre's own published times, by day. */
+function ProposeTime({ rhu, sel }: { rhu: Rhu; sel: Appointment }) {
+  const [slot, setSlot] = useState<Minute | null>(null);
+  return (
+    <div className="propose-inline">
+      <span className="strong">Choose the new time</span>
+      <DateTimeField id="visit-propose" now={rhu.now} value={slot} onChange={setSlot} exclude={sel.slot} />
+      <span className="actions__hint">Only the patient can accept it. If they do not answer within 48 hours, the visit comes back here to decline.</span>
+      <div className="choice-row">
+        <Button size="md" disabled={slot === null} onClick={() => slot !== null && rhu.proposeTime(sel, slot)}>Propose this time</Button>
+        <Button size="md" variant="outline" onClick={() => rhu.setProposeFor(null)}>Cancel</Button>
+      </div>
+    </div>
+  );
+}
+

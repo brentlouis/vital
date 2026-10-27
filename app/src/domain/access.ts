@@ -1,7 +1,8 @@
 /* Who may read what (brief §10.5): every read is checked against consent, never against
    facility identity alone. */
 
-import type { AppointmentRecord, StandingGrant, Viewer } from './types';
+import type { AppointmentRecord, HistoryGrant, StandingGrant, Viewer } from './types';
+import { isTerminal, shownStatus } from './flow';
 import type { Minute } from './time';
 
 export type Access = 'full' | 'withdrawn' | 'denied';
@@ -30,3 +31,15 @@ export function accessTo(a: AppointmentRecord, viewer: Viewer, grants: StandingG
   }
   return 'denied';
 }
+
+/* The history grant that lets this facility see the patient's earlier results and details
+   now, if any: not revoked, and — when given with an appointment — that appointment still open. */
+export function historyGrant(grants: HistoryGrant[], appointments: AppointmentRecord[], patientId: string, facility: string, now: Minute): HistoryGrant | undefined {
+  return grants.find(g => g.patientId === patientId && g.facility === facility && g.granted <= now
+    && (g.revokedAt === undefined || g.revokedAt > now)
+    && (g.appointmentId === null || (() => {
+      const a = appointments.find(x => x.id === g.appointmentId);
+      return !!a && !isTerminal(shownStatus(a, now));
+    })()));
+}
+

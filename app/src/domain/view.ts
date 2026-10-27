@@ -3,9 +3,9 @@
    read AppointmentRecord directly, and never write to a view — writes go through the store. */
 
 import { RHU, defaultStaff, person } from './reference';
-import { OVERDUE_GRACE, openProposal, responseMinutesLeft, shownStatus, storedStatus } from './flow';
+import { OVERDUE_GRACE, liveTrail, openProposal, responseMinutesLeft, shownStatus, storedStatus } from './flow';
 import { fmt, fmtTime, type Minute } from './time';
-import type { AppointmentRecord, EventStatus, Origin, Status } from './types';
+import type { AppointmentRecord, EventStatus, Origin, PriorityReason, Status } from './types';
 
 export interface TrailEventView {
   status: EventStatus;
@@ -13,6 +13,10 @@ export interface TrailEventView {
   actor: string;
   facility: string;
   note?: string;
+  /** A later entry withdrew this step: it stays in the trail but no longer counts. */
+  withdrawn?: boolean;
+  /** This entry withdraws the step before it. */
+  withdrawal?: boolean;
 }
 
 export interface ResultView {
@@ -32,6 +36,12 @@ export interface Appointment {
   sex: 'F' | 'M';
   municipality: string;
   origin: Origin;
+  /** A doctor visit rather than a test. */
+  visit: boolean;
+  /** The doctor visit this was ordered from. */
+  fromVisit: string | null;
+  /** Why the referring facility gave it priority, if it did. */
+  priority: PriorityReason | null;
   fromFacility: string | null;
   referredBy: string | null;
   lab: string;
@@ -44,6 +54,8 @@ export interface Appointment {
   status: Status;
   stored: EventStatus;
   slot: Minute;
+  /** VITAL picked the time for the patient. */
+  autoTime: boolean;
   scheduledAt: string;
   scheduledTime: string;
   expectedBy: string;
@@ -66,6 +78,11 @@ export interface Appointment {
   trail: TrailEventView[];
 }
 
+/** Queue order: priority appointments first, otherwise the order given (Array.sort is stable). */
+export function priorityFirst(a: Appointment, b: Appointment): number {
+  return Number(!!b.priority) - Number(!!a.priority);
+}
+
 export function countdown(minsLeft: number): string {
   if (minsLeft <= 0) return 'No response — returned to the facility';
   if (minsLeft < 60) return `${minsLeft} minutes left to respond`;
@@ -78,7 +95,7 @@ export function toView(a: AppointmentRecord, now: Minute): Appointment {
   const last = a.trail[a.trail.length - 1];
   const proposal = openProposal(a);
   const left = responseMinutesLeft(a, now);
-  const decline = [...a.trail].reverse().find(e => e.status === 'Declined');
+  const decline = [...liveTrail(a)].reverse().find(e => e.status === 'Declined');
   const current = a.results[a.results.length - 1];
   const earlierVoid = [...a.results].slice(0, -1).reverse().find(r => r.voidedAt !== undefined);
   return {
@@ -90,6 +107,10 @@ export function toView(a: AppointmentRecord, now: Minute): Appointment {
     sex: p.sex,
     municipality: p.municipality,
     origin: a.origin,
+    visit: a.kind === 'Consultation',
+    fromVisit: a.fromVisit ?? null,
+    priority: a.priority ?? null,
+    autoTime: !!a.autoTime,
     fromFacility: a.fromFacility,
     referredBy: a.referredBy,
     lab: a.lab,
@@ -122,8 +143,18 @@ export function toView(a: AppointmentRecord, now: Minute): Appointment {
       at: fmt(earlierVoid.voidedAt!), by: earlierVoid.voidedBy ?? '', file: earlierVoid.file,
       reason: earlierVoid.voidReason ?? 'attached to the wrong patient',
     } : null,
-    trail: a.trail.map(e => ({ status: e.status, at: fmt(e.at), actor: e.actor, facility: e.facility, note: e.note })),
+    trail: a.trail.map((e, i) => ({
+      status: e.status, at: fmt(e.at), actor: e.actor, facility: e.facility, note: e.note,
+      ...(e.withdraws ? { withdrawal: true } : a.trail[i + 1]?.withdraws ? { withdrawn: true } : {}),
+    })),
   };
+}
+
+/* Where an appointment came from, by facility only: short enough for a list entry. */
+export function sourceOf(a: Appointment): string {
+  if (a.origin === 'Personal') return 'Booked by the patient';
+  if (a.origin === 'Internal') return 'Internal order';
+  return a.fromFacility ?? RHU;
 }
 
 /* The referring provider line: whoever originated the appointment — not always the RHU. */

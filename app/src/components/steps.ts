@@ -1,5 +1,5 @@
 import {
-  CalendarClock, Check, CheckCheck, CircleX, Inbox, OctagonAlert, Upload, UserCheck, UserX, type LucideIcon,
+  Stethoscope, CalendarClock, Check, CheckCheck, CircleX, Inbox, OctagonAlert, Upload, UserCheck, UserX, type LucideIcon,
 } from 'lucide-react';
 import type { EventStatus } from '../domain/types';
 import type { Appointment } from '../domain/view';
@@ -14,19 +14,19 @@ export interface StepUi {
   opens?: 'upload' | 'propose';
   /** Destructive steps confirm first, naming the consequence. */
   confirm?: (a: Appointment, told: string) => { title: string; body: string; action: string; cancel: string; note?: string };
-  /** Safe to offer as a one-tap button on a queue row. */
-  quick?: boolean;
+  /** What the confirmation says once the step is written: "<patient> marked received". */
+  done: string;
 }
 
 export const STEP_UI: Partial<Record<EventStatus, StepUi>> = {
-  Received: { label: 'Mark as received', icon: Inbox, variant: 'primary', quick: true },
-  Accepted: { label: 'Accept appointment', icon: Check, variant: 'primary', quick: true },
-  'Reschedule proposed': { label: 'Propose new time', icon: CalendarClock, variant: 'outline', opens: 'propose' },
-  'Patient arrived': { label: 'Mark patient arrived', icon: UserCheck, variant: 'primary', quick: true },
-  Endorsed: { label: 'Upload result', icon: Upload, variant: 'primary', opens: 'upload' },
-  Completed: { label: 'Acknowledge result', icon: CheckCheck, variant: 'primary', quick: true },
+  Received: { label: 'Mark as received', icon: Inbox, variant: 'primary', done: 'marked received' },
+  Accepted: { label: 'Accept appointment', icon: Check, variant: 'primary', done: 'accepted' },
+  'Reschedule proposed': { label: 'Propose new time', icon: CalendarClock, variant: 'outline', opens: 'propose', done: 'offered a new time' },
+  'Patient arrived': { label: 'Mark patient arrived', icon: UserCheck, variant: 'primary', done: 'marked arrived' },
+  Endorsed: { label: 'Upload result', icon: Upload, variant: 'primary', opens: 'upload', done: 'result released' },
+  Completed: { label: 'Acknowledge result', icon: CheckCheck, variant: 'primary', done: 'result acknowledged' },
   Declined: {
-    label: 'Decline appointment', icon: CircleX, variant: 'danger-outline',
+    label: 'Decline appointment', icon: CircleX, variant: 'danger-outline', done: 'declined',
     confirm: (a, told) => {
       const expired = a.respondMinsLeft !== null && a.respondMinsLeft <= 0;
       return {
@@ -42,7 +42,7 @@ export const STEP_UI: Partial<Record<EventStatus, StepUi>> = {
     },
   },
   'No-show': {
-    label: 'Patient did not arrive', icon: UserX, variant: 'danger-outline',
+    label: 'Patient did not arrive', icon: UserX, variant: 'danger-outline', done: 'marked as not arrived',
     confirm: (a, told) => ({
       title: 'Mark the patient as not arrived?',
       body: `This records that ${a.patient} did not arrive for the ${a.scheduledAt} slot. The appointment closes and no result can be attached. ${told} Your name is written to the status trail.`,
@@ -50,7 +50,7 @@ export const STEP_UI: Partial<Record<EventStatus, StepUi>> = {
     }),
   },
   'Result voided': {
-    label: 'Void result', icon: OctagonAlert, variant: 'danger-outline',
+    label: 'Void result', icon: OctagonAlert, variant: 'danger-outline', done: 'result voided',
     confirm: (_a, told) => ({
       title: 'Void this result?',
       body: `The document stays in the record, marked voided, and remains readable to the audit log. ${told} The appointment returns to patient arrived so the correct result can be uploaded.`,
@@ -58,6 +58,26 @@ export const STEP_UI: Partial<Record<EventStatus, StepUi>> = {
     }),
   },
 };
+
+/* A doctor visit closes differently: the facility records that the doctor saw the patient. */
+const VISIT_UI: Partial<Record<EventStatus, StepUi>> = {
+  Completed: { label: 'Mark seen by the doctor', icon: Stethoscope, variant: 'primary', done: 'marked seen by the doctor' },
+  'Patient arrived': { label: 'Mark patient arrived', icon: UserCheck, variant: 'primary', done: 'marked arrived for the visit' },
+  Declined: {
+    label: 'Decline visit', icon: CircleX, variant: 'danger-outline', done: 'declined',
+    confirm: a => ({
+      title: 'Decline this doctor visit?',
+      body: `${a.patient} will be told to book another time or another facility. This closes the visit — it cannot be reopened. Your name is written to the status trail.`,
+      action: 'Decline visit', cancel: 'Keep the visit',
+      note: 'The doctor cannot see you at this time. Please book another time or another facility.',
+    }),
+  },
+};
+
+/* How a step looks on this appointment. */
+export function stepUi(a: { kind?: 'Consultation' }, to: EventStatus): StepUi | undefined {
+  return (a.kind === 'Consultation' && VISIT_UI[to]) || STEP_UI[to];
+}
 
 const ORDER: StepUi['variant'][] = ['primary', 'outline', 'danger-outline'];
 export function byVariant(a: { ui: StepUi }, b: { ui: StepUi }) {

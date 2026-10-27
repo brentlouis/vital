@@ -1,14 +1,21 @@
-import { useEffect, useState, type KeyboardEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, CheckCheck, CircleX, Clock, FileText, type LucideIcon } from 'lucide-react';
+import { PortalNav } from '../../components/PortalNav';
+import { BadgeCheck, BarChart3, MessageSquareWarning, ScrollText } from 'lucide-react';
+import { AuditLog, PilotMeasures, ReportedIssues } from './AdminScreens';
 import { BackButton, Button, Card, Facts, Icon, Pills } from '../../components/ui';
 import { PrototypeBar, PrototypeLabel, SessionBar } from '../../components/PortalChrome';
 import { useDemo } from '../../store/context';
 import { fmt } from '../../domain/time';
+import { useScreenFocus } from '../../components/useScreenFocus';
 
-type Screen = 'queue' | 'review';
+type Screen = 'queue' | 'review' | 'measures' | 'audit' | 'issues';
 const SCREENS: { id: Screen; label: string }[] = [
   { id: 'queue', label: 'A1 Verification queue' },
   { id: 'review', label: 'A2 Facility review' },
+  { id: 'measures', label: 'A3 Pilot measures' },
+  { id: 'audit', label: 'A4 Audit log' },
+  { id: 'issues', label: 'A5 Reported issues' },
 ];
 
 type Decision = 'Pending' | 'Approved' | 'Rejected';
@@ -45,7 +52,7 @@ export function AdminVerification() {
   const [note, setNote] = useState('');
 
   useEffect(() => { document.title = 'VITAL — Admin verification'; }, []);
-  useEffect(() => { window.scrollTo(0, 0); }, [screen, selectedRef]);
+  useScreenFocus([screen, selectedRef]);
 
   const open = (ref: string) => { setSelectedRef(ref); setRejecting(false); setReason(null); setNote(''); setScreen('review'); };
   const f = facilities.find(r => r.reference === selectedRef) ?? facilities[0];
@@ -62,7 +69,18 @@ export function AdminVerification() {
         <Pills items={SCREENS} value={screen} onChange={setScreen} />
       </PrototypeBar>
 
+      <div className="portal__body">
+      <PortalNav<'queue' | 'measures' | 'audit' | 'issues'> label="Administration"
+        value={screen === 'review' ? 'queue' : screen} onChange={setScreen} items={[
+          { id: 'queue', label: 'Verification', icon: BadgeCheck, count: waiting },
+          { id: 'measures', label: 'Pilot measures', icon: BarChart3 },
+          { id: 'audit', label: 'Audit log', icon: ScrollText },
+          { id: 'issues', label: 'Reported issues', icon: MessageSquareWarning, count: state.issues.filter(i => i.status === 'Open').length },
+        ]} />
       <main className="portal__main">
+        {screen === 'measures' && <PilotMeasures />}
+        {screen === 'audit' && <AuditLog />}
+        {screen === 'issues' && <ReportedIssues />}
         {screen === 'queue' && (
           <div>
             <div className="page-head">
@@ -84,14 +102,12 @@ export function AdminVerification() {
                 </thead>
                 <tbody>
                   {facilities.map(r => {
-                    const onKey = (e: KeyboardEvent) => {
-                      if (e.target !== e.currentTarget) return;
-                      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(r.reference); }
-                    };
                     return (
-                      <tr key={r.reference} tabIndex={0} role="button" onClick={() => open(r.reference)} onKeyDown={onKey}
+                      <tr key={r.reference} onClick={() => open(r.reference)}
                         className={`queue__row accent--${STATUS[r.status].accent}`}>
-                        <td className="queue__patient">{r.name}</td>
+                        <td className="queue__patient">
+                          <button type="button" className="row-link" onClick={e => { e.stopPropagation(); open(r.reference); }}>{r.name}</button>
+                        </td>
                         <td>{r.type}</td>
                         <td>{r.municipality}</td>
                         <td className="tabular">{r.licence}</td>
@@ -212,6 +228,7 @@ export function AdminVerification() {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }
